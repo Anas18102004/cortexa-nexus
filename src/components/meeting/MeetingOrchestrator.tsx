@@ -4,10 +4,11 @@ import { Meeting, Participant, MeetingState } from "@/types/meeting";
 import { PreJoinLobby } from "./PreJoinLobbyReal";
 import { LiveMeetingRoom } from "./LiveMeetingRoom";
 import { PostMeetingSummary } from "./PostMeetingSummary";
+import { MeetingErrorState } from "./MeetingStates";
 import { useDailyMeeting } from "@/hooks/useDailyMeeting";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 
-type MeetingPhase = "lobby" | "live" | "ended";
+type MeetingPhase = "lobby" | "live" | "ended" | "error";
 
 interface MeetingOrchestratorProps {
   meeting: Meeting;
@@ -23,6 +24,7 @@ export function MeetingOrchestrator({
   const [phase, setPhase] = useState<MeetingPhase>("lobby");
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [meetingError, setMeetingError] = useState<string | null>(null);
 
   // Daily.co meeting integration
   const dailyMeeting = useDailyMeeting({
@@ -33,13 +35,30 @@ export function MeetingOrchestrator({
     onMeetingJoined: () => {
       console.log("Successfully joined meeting");
       setPhase("live");
+      setMeetingError(null);
     },
     onMeetingLeft: () => {
       console.log("Left meeting");
-      setPhase("ended");
+      // Only go to ended if we were actually in a live meeting
+      if (phase === "live") {
+        setPhase("ended");
+      }
     },
     onError: (err) => {
       console.error("Meeting error:", err);
+      const errorMessage = err.message || "Failed to join meeting";
+      
+      // Check for specific Daily.co errors
+      if (errorMessage.includes("account-missing-payment-method")) {
+        setMeetingError("Daily.co account requires a payment method. Please configure billing in your Daily.co dashboard or use a different video provider.");
+      } else if (errorMessage.includes("exp-room")) {
+        setMeetingError("This meeting room has expired. Please create a new meeting.");
+      } else if (errorMessage.includes("nbf-room")) {
+        setMeetingError("This meeting has not started yet. Please wait for the host.");
+      } else {
+        setMeetingError(errorMessage);
+      }
+      setPhase("error");
     },
   });
 
@@ -52,6 +71,7 @@ export function MeetingOrchestrator({
   const handleJoinMeeting = useCallback(async (audio: boolean, video: boolean) => {
     setAudioEnabled(audio);
     setVideoEnabled(video);
+    setMeetingError(null);
     await dailyMeeting.joinMeeting();
   }, [dailyMeeting]);
 
@@ -62,8 +82,14 @@ export function MeetingOrchestrator({
 
   const handleRejoin = useCallback(() => {
     setPhase("lobby");
+    setMeetingError(null);
     meetingAI.reset();
   }, [meetingAI]);
+
+  const handleRetry = useCallback(() => {
+    setPhase("lobby");
+    setMeetingError(null);
+  }, []);
 
   // Build meeting state for summary
   const buildMeetingState = (): MeetingState => ({
@@ -100,6 +126,13 @@ export function MeetingOrchestrator({
           userName={currentUser.name}
           isHost={currentUser.isHost}
           onEndMeeting={handleEndMeeting}
+        />
+      )}
+
+      {phase === "error" && (
+        <MeetingErrorState
+          error={meetingError || "An unexpected error occurred"}
+          onRetry={handleRetry}
         />
       )}
 
