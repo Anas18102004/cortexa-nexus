@@ -8,11 +8,12 @@ import { DecisionCapture } from "./DecisionCapture";
 import { ChatPanel } from "./ChatPanel";
 import { BreakoutRooms } from "./BreakoutRooms";
 import { Whiteboard } from "./Whiteboard";
+import { FileSharing } from "./FileSharing";
 import { useMeetingChat } from "@/hooks/useMeetingChat";
 import { useBreakoutRooms } from "@/hooks/useBreakoutRooms";
 import { useWhiteboard } from "@/hooks/useWhiteboard";
 import { useState } from "react";
-import { Clock, MessageSquare, Users, PenTool } from "lucide-react";
+import { Clock, MessageSquare, Users, PenTool, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LiveMeetingProps {
@@ -22,7 +23,7 @@ interface LiveMeetingProps {
   className?: string;
 }
 
-type SidePanel = "none" | "chat" | "breakout" | "whiteboard";
+type SidePanel = "none" | "chat" | "breakout" | "whiteboard" | "files";
 
 export function LiveMeeting({
   state,
@@ -125,6 +126,13 @@ export function LiveMeeting({
             >
               <PenTool className="w-4 h-4" />
             </Button>
+            <Button
+              variant={activePanel === "files" ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={() => togglePanel("files")}
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -194,6 +202,9 @@ export function LiveMeeting({
                 onAssignParticipant={assignParticipant}
                 onClose={() => setActivePanel("none")}
               />
+            )}
+            {activePanel === "files" && (
+              <FileSharing onClose={() => setActivePanel("none")} />
             )}
           </div>
         )}
