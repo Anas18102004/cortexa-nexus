@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { useRealtimeReactions, ReactionBroadcast } from "./useRealtimeReactions";
 
 export interface FloatingReaction {
   id: string;
@@ -10,6 +11,7 @@ export interface FloatingReaction {
     name: string;
     avatar: string;
   };
+  isRemote?: boolean; // True if this reaction came from another participant
 }
 
 export interface ReactionSender {
@@ -34,7 +36,15 @@ const EMOJI_SOUND_MAP: Record<string, { freq: number; type: OscillatorType }> = 
   "💪": { freq: 330, type: "square" },    // E4 - strong
 };
 
-export function useFloatingReactions(currentUser?: ReactionSender) {
+interface UseFloatingReactionsOptions {
+  meetingId?: string;
+  currentUser?: ReactionSender;
+  enableRealtime?: boolean;
+}
+
+export function useFloatingReactions(options: UseFloatingReactionsOptions = {}) {
+  const { meetingId, currentUser, enableRealtime = true } = options;
+  
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -48,12 +58,15 @@ export function useFloatingReactions(currentUser?: ReactionSender) {
   }, []);
 
   // Play a satisfying pop/ping sound for reactions
-  const playReactionSound = useCallback((emoji: string, isBurst: boolean = false) => {
+  const playReactionSound = useCallback((emoji: string, isBurst: boolean = false, isRemote: boolean = false) => {
     if (!soundEnabled) return;
 
     try {
       const ctx = getAudioContext();
       const soundConfig = EMOJI_SOUND_MAP[emoji] || { freq: 523, type: "sine" as OscillatorType };
+      
+      // Remote reactions are slightly softer
+      const volumeMultiplier = isRemote ? 0.6 : 1;
       
       // Create oscillator for the main tone
       const oscillator = ctx.createOscillator();
@@ -73,8 +86,9 @@ export function useFloatingReactions(currentUser?: ReactionSender) {
       );
 
       // Volume envelope - quick attack, medium decay
+      const baseVolume = isBurst ? 0.15 : 0.25;
       gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(isBurst ? 0.15 : 0.25, ctx.currentTime + 0.02);
+      gainNode.gain.linearRampToValueAtTime(baseVolume * volumeMultiplier, ctx.currentTime + 0.02);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
 
       oscillator.connect(gainNode);
@@ -90,7 +104,7 @@ export function useFloatingReactions(currentUser?: ReactionSender) {
       harmonic.type = "sine";
       harmonic.frequency.setValueAtTime(soundConfig.freq * 2, ctx.currentTime);
       harmonicGain.gain.setValueAtTime(0, ctx.currentTime);
-      harmonicGain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+      harmonicGain.gain.linearRampToValueAtTime(0.08 * volumeMultiplier, ctx.currentTime + 0.01);
       harmonicGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
 
       harmonic.connect(harmonicGain);
@@ -104,25 +118,69 @@ export function useFloatingReactions(currentUser?: ReactionSender) {
     }
   }, [soundEnabled, getAudioContext]);
 
-  const addReaction = useCallback((emoji: string, sender?: ReactionSender) => {
-    const reactionSender = sender || currentUser;
-    
+  // Add a reaction to the local display
+  const addReactionToDisplay = useCallback((
+    emoji: string, 
+    sender?: ReactionSender, 
+    isRemote: boolean = false,
+    playSound: boolean = true
+  ) => {
     const newReaction: FloatingReaction = {
       id: `reaction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       emoji,
       x: 10 + Math.random() * 80, // Random position between 10-90%
       createdAt: Date.now(),
-      sender: reactionSender,
+      sender,
+      isRemote,
     };
 
     setReactions((prev) => [...prev, newReaction]);
-    playReactionSound(emoji, false);
+    
+    if (playSound) {
+      playReactionSound(emoji, false, isRemote);
+    }
 
     // Auto-remove after animation completes (4 seconds)
     setTimeout(() => {
       setReactions((prev) => prev.filter((r) => r.id !== newReaction.id));
     }, 4000);
-  }, [currentUser, playReactionSound]);
+  }, [playReactionSound]);
+
+  // Handle incoming reactions from other participants
+  const handleRemoteReaction = useCallback((broadcast: ReactionBroadcast) => {
+    console.log("Handling remote reaction:", broadcast);
+    
+    if (broadcast.isBurst) {
+      // Add multiple reactions for burst
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          addReactionToDisplay(broadcast.emoji, broadcast.sender, true, i === 0);
+        }, i * 100);
+      }
+    } else {
+      addReactionToDisplay(broadcast.emoji, broadcast.sender, true);
+    }
+  }, [addReactionToDisplay]);
+
+  // Setup realtime sync if enabled and we have the required info
+  const realtimeReactions = useRealtimeReactions({
+    meetingId: meetingId || "local",
+    currentUser: currentUser || { id: "local", name: "You", avatar: "" },
+    onReactionReceived: handleRemoteReaction,
+  });
+
+  // Add a reaction (local + broadcast)
+  const addReaction = useCallback((emoji: string, sender?: ReactionSender) => {
+    const reactionSender = sender || currentUser;
+    
+    // Add to local display
+    addReactionToDisplay(emoji, reactionSender, false);
+
+    // Broadcast to other participants if realtime is enabled
+    if (enableRealtime && meetingId) {
+      realtimeReactions.broadcastReaction(emoji, false);
+    }
+  }, [currentUser, addReactionToDisplay, enableRealtime, meetingId, realtimeReactions]);
 
   const removeReaction = useCallback((id: string) => {
     setReactions((prev) => prev.filter((r) => r.id !== id));
@@ -136,27 +194,20 @@ export function useFloatingReactions(currentUser?: ReactionSender) {
 
   // Burst reaction - adds multiple of the same emoji
   const addBurstReaction = useCallback((emoji: string, count: number = 5) => {
+    const reactionSender = currentUser;
+
+    // Broadcast burst to other participants
+    if (enableRealtime && meetingId) {
+      realtimeReactions.broadcastReaction(emoji, true);
+    }
+
+    // Add locally with stagger
     for (let i = 0; i < count; i++) {
       setTimeout(() => {
-        const reactionSender = currentUser;
-        
-        const newReaction: FloatingReaction = {
-          id: `reaction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          emoji,
-          x: 10 + Math.random() * 80,
-          createdAt: Date.now(),
-          sender: reactionSender,
-        };
-
-        setReactions((prev) => [...prev, newReaction]);
-        playReactionSound(emoji, true);
-
-        setTimeout(() => {
-          setReactions((prev) => prev.filter((r) => r.id !== newReaction.id));
-        }, 4000);
-      }, i * 100); // Stagger by 100ms each
+        addReactionToDisplay(emoji, reactionSender, false, i === 0);
+      }, i * 100);
     }
-  }, [currentUser, playReactionSound]);
+  }, [currentUser, enableRealtime, meetingId, realtimeReactions, addReactionToDisplay]);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled((prev) => !prev);
