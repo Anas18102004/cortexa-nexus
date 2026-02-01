@@ -7,9 +7,12 @@ import { usePushToTalk } from "@/hooks/usePushToTalk";
 import { useIdleDetection } from "@/hooks/useIdleDetection";
 import { useLocalRecording } from "@/hooks/useLocalRecording";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useFloatingReactions } from "@/hooks/useFloatingReactions";
 import { AIParticipantCard } from "./AIParticipantCard";
 import { MeetingControlsReal } from "./MeetingControlsReal";
 import { FloatingControls } from "./FloatingControls";
+import { FloatingReactions } from "./FloatingReactions";
+import { ReactionPicker } from "./ReactionPicker";
 import { ChatPanel } from "./ChatPanel";
 import { DecisionCapture } from "./DecisionCapture";
 import { ParticipantsList } from "./ParticipantsList";
@@ -23,7 +26,7 @@ import { RecordingIndicator } from "./RecordingIndicator";
 import { HostAdmitPanel } from "./HostAdmitPanel";
 import { Meeting } from "@/types/meeting";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import {
   Clock, 
   MessageSquare, 
   Target,
@@ -125,6 +128,9 @@ export function LiveMeetingRoomLocal({
 
   // Chat hook
   const chat = useMeetingChat();
+
+  // Floating reactions hook
+  const floatingReactions = useFloatingReactions();
 
   // Attach local video stream
   useEffect(() => {
@@ -741,12 +747,22 @@ export function LiveMeetingRoomLocal({
         meetingTitle={meeting.title}
       />
 
+      {/* Floating Emoji Reactions */}
+      <FloatingReactions reactions={floatingReactions.reactions} />
+
       {/* Bottom Controls with Auto-Hide */}
       <FloatingControls
         isIdle={isIdle}
         forceVisible={forceControlsVisible}
-        className="py-4 flex items-center justify-center shrink-0"
+        className="py-4 flex items-center justify-center shrink-0 gap-3"
       >
+        {/* Reaction Picker - Left of controls */}
+        <ReactionPicker
+          onSelectReaction={floatingReactions.addReaction}
+          onBurstReaction={floatingReactions.addBurstReaction}
+          availableEmojis={floatingReactions.availableEmojis}
+        />
+
         <MeetingControlsReal
           isMuted={localParticipant?.isMuted ?? true}
           isVideoOn={localParticipant?.isVideoOn ?? false}
