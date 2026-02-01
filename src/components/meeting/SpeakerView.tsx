@@ -1,18 +1,26 @@
 import { cn } from "@/lib/utils";
-import { Participant } from "@/types/meeting";
+import { Participant, MeetingUIMode, AgendaItem } from "@/types/meeting";
 import { Sparkles } from "lucide-react";
+import { MeetingContextLayer } from "./MeetingContextLayer";
+import { ParticipantFilmstrip } from "./ParticipantFilmstrip";
 
 interface SpeakerViewProps {
   activeSpeaker: Participant | null;
   participants: Participant[];
+  mode?: MeetingUIMode;
+  currentAgendaItem?: AgendaItem;
+  elapsedTime?: number;
   className?: string;
 }
 
-export function SpeakerView({ activeSpeaker, participants, className }: SpeakerViewProps) {
-  const otherParticipants = participants.filter(
-    (p) => p.id !== activeSpeaker?.id
-  );
-
+export function SpeakerView({ 
+  activeSpeaker, 
+  participants, 
+  mode = "focus",
+  currentAgendaItem,
+  elapsedTime = 0,
+  className 
+}: SpeakerViewProps) {
   return (
     <div className={cn("relative flex-1 flex flex-col", className)}>
       {/* Main Speaker */}
@@ -40,6 +48,13 @@ export function SpeakerView({ activeSpeaker, participants, className }: SpeakerV
                 </div>
               </div>
             )}
+
+            {/* Context Layer - Living Intelligence Surface */}
+            <MeetingContextLayer
+              mode={mode}
+              currentAgendaItem={currentAgendaItem}
+              elapsedTime={elapsedTime}
+            />
 
             {/* Speaker Info */}
             <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -76,50 +91,13 @@ export function SpeakerView({ activeSpeaker, participants, className }: SpeakerV
         )}
       </div>
 
-      {/* Filmstrip */}
-      {otherParticipants.length > 0 && (
-        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-          {otherParticipants.map((participant) => (
-            <div
-              key={participant.id}
-              className={cn(
-                "shrink-0 relative rounded-xl overflow-hidden transition-all",
-                participant.isSpeaking && "ring-2 ring-primary"
-              )}
-            >
-              {participant.isVideoOn ? (
-                <div className="w-20 h-14 bg-surface-1">
-                  <img
-                    src={participant.avatar}
-                    alt={participant.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-20 h-14 bg-surface-2 flex items-center justify-center">
-                  <span className="text-sm font-medium text-foreground">
-                    {participant.name.charAt(0)}
-                  </span>
-                </div>
-              )}
-
-              {/* AI Badge */}
-              {participant.isAI && (
-                <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-primary/90 flex items-center justify-center">
-                  <Sparkles className="w-2.5 h-2.5 text-primary-foreground" />
-                </div>
-              )}
-
-              {/* Name */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
-                <p className="text-[10px] text-white text-center truncate">
-                  {participant.name.split(" ")[0]}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Filmstrip with Role Signals */}
+      <div className="mt-3">
+        <ParticipantFilmstrip
+          participants={participants}
+          activeSpeakerId={activeSpeaker?.id}
+        />
+      </div>
     </div>
   );
 }

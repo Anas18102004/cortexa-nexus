@@ -252,6 +252,68 @@
       transform: translateY(0) scale(1);
     }
   }
+
+  /* Decision Confirmed Glow */
+  .decision-confirmed {
+    animation: decision-glow 0.8s ease-out forwards;
+  }
+
+  @keyframes decision-glow {
+    0% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    }
+    30% {
+      box-shadow: 0 0 20px 4px hsl(var(--primary) / 0.4);
+    }
+    100% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    }
+  }
+
+  /* Agenda Item Breathing */
+  .agenda-active {
+    animation: agenda-breathe 2s ease-in-out infinite;
+  }
+
+  @keyframes agenda-breathe {
+    0%, 100% {
+      background-color: hsl(var(--surface-1));
+    }
+    50% {
+      background-color: hsl(var(--primary) / 0.08);
+    }
+  }
+
+  /* Cognitive Nudge */
+  .cognitive-nudge {
+    animation: nudge-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes nudge-in {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.95);
+      filter: blur(4px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  /* Shadow Glow Utilities */
+  .shadow-glow-sm {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.15);
+  }
+
+  .shadow-glow-md {
+    box-shadow: 0 0 25px hsl(var(--primary) / 0.2);
+  }
+
+  .shadow-glow-lg {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.25);
+  }
   
   /* Audio Waveform */
   .audio-wave {
