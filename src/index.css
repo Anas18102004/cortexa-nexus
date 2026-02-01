@@ -7,6 +7,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
+  /* ═══════════════════════════════════════════════════════════════
+     DARK MODE (Default) - Deep Obsidian Palette
+     ═══════════════════════════════════════════════════════════════ */
   :root {
     /* Core Surface Colors */
     --background: 228 15% 6%;
@@ -76,6 +79,78 @@
     --sidebar-border: 228 15% 14%;
     --sidebar-ring: 168 76% 50%;
   }
+
+  /* ═══════════════════════════════════════════════════════════════
+     LIGHT MODE - Warm Pearl & Soft Linen Palette
+     Premium, editorial, sophisticated - NOT generic white
+     ═══════════════════════════════════════════════════════════════ */
+  .light {
+    /* Core Surface Colors - Warm Linen Base */
+    --background: 40 30% 97%;
+    --foreground: 228 25% 12%;
+    
+    /* Card & Popover - Soft Pearl Elevation */
+    --card: 40 25% 99%;
+    --card-foreground: 228 25% 12%;
+    --popover: 40 25% 99%;
+    --popover-foreground: 228 25% 12%;
+    
+    /* Primary - Deep Teal (richer in light mode) */
+    --primary: 168 65% 38%;
+    --primary-foreground: 40 30% 98%;
+    
+    /* Secondary - Muted Violet */
+    --secondary: 250 35% 58%;
+    --secondary-foreground: 40 30% 98%;
+    
+    /* Muted - Warm Stone */
+    --muted: 35 15% 92%;
+    --muted-foreground: 228 15% 45%;
+    
+    /* Accent - Ocean Cyan */
+    --accent: 188 75% 42%;
+    --accent-foreground: 40 30% 98%;
+    
+    /* Destructive - Coral */
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 40 30% 98%;
+    
+    /* Borders & Input - Warm Smoke */
+    --border: 35 15% 88%;
+    --input: 35 15% 90%;
+    --ring: 168 65% 38%;
+    
+    /* Aurora Accent Colors - Softened for light */
+    --aurora-teal: 168 65% 38%;
+    --aurora-violet: 250 45% 58%;
+    --aurora-cyan: 188 65% 42%;
+    --aurora-rose: 340 60% 52%;
+    
+    /* Surface Layers - Layered Warmth */
+    --surface-0: 40 30% 97%;
+    --surface-1: 40 25% 99%;
+    --surface-2: 35 20% 95%;
+    --surface-3: 35 15% 92%;
+    
+    /* Glass Effect - Pearl Frost */
+    --glass-bg: 40 30% 98% / 0.85;
+    --glass-border: 35 20% 80% / 0.4;
+    
+    /* Glow Effects - Softer for light mode */
+    --glow-teal: 168 65% 38% / 0.12;
+    --glow-violet: 250 45% 58% / 0.12;
+    --glow-cyan: 188 65% 42% / 0.12;
+    
+    /* Sidebar */
+    --sidebar-background: 40 25% 98%;
+    --sidebar-foreground: 228 25% 25%;
+    --sidebar-primary: 168 65% 38%;
+    --sidebar-primary-foreground: 40 30% 98%;
+    --sidebar-accent: 35 20% 94%;
+    --sidebar-accent-foreground: 228 25% 12%;
+    --sidebar-border: 35 15% 88%;
+    --sidebar-ring: 168 65% 38%;
+  }
 }
 
 @layer base {
@@ -87,9 +162,10 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: 'cv11', 'ss01';
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  /* Custom Scrollbar */
+  /* Custom Scrollbar - Adaptive */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

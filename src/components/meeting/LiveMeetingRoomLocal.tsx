@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { useDailyMeeting, MeetingParticipant } from "@/hooks/useDailyMeeting";
+import { useLocalMeeting, LocalParticipant } from "@/hooks/useLocalMeeting";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 import { useLiveTranscription } from "@/hooks/useLiveTranscription";
 import { usePushToTalk } from "@/hooks/usePushToTalk";
-import { MeetingGrid } from "./MeetingGrid";
 import { AIParticipantCard } from "./AIParticipantCard";
 import { MeetingControlsReal } from "./MeetingControlsReal";
 import { ChatPanel } from "./ChatPanel";
@@ -13,22 +12,17 @@ import { ParticipantsList } from "./ParticipantsList";
 import { InviteModal } from "./InviteModal";
 import { LiveTranscript } from "./LiveTranscript";
 import { AINudge } from "./AIInsightCard";
-import { JoiningState, EmptyMeetingState, ReconnectingState } from "./MeetingStates";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useMeetingChat } from "@/hooks/useMeetingChat";
-import { Meeting, Decision, ActionItem, AgendaItem } from "@/types/meeting";
+import { Meeting } from "@/types/meeting";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Clock, 
   MessageSquare, 
   Target,
   X,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
   LayoutGrid,
   User,
-  Maximize2,
   Users,
   UserPlus,
   Mic,
@@ -37,11 +31,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-interface LiveMeetingRoomProps {
+interface LiveMeetingRoomLocalProps {
   meeting: Meeting;
   userId: string;
   userName: string;
   isHost: boolean;
+  localMeeting: ReturnType<typeof useLocalMeeting>;
   onEndMeeting: () => void;
   className?: string;
 }
@@ -49,14 +44,15 @@ interface LiveMeetingRoomProps {
 type LayoutMode = "grid" | "speaker" | "sidebar";
 type SidePanel = "none" | "chat" | "decisions" | "participants" | "transcript";
 
-export function LiveMeetingRoom({
+export function LiveMeetingRoomLocal({
   meeting,
   userId,
   userName,
   isHost,
+  localMeeting,
   onEndMeeting,
   className,
-}: LiveMeetingRoomProps) {
+}: LiveMeetingRoomLocalProps) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("speaker");
   const [activePanel, setActivePanel] = useState<SidePanel>("none");
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -66,30 +62,26 @@ export function LiveMeetingRoom({
   const [aiNudge, setAiNudge] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(true);
 
-  // Daily.co meeting hook
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+
   const {
     participants,
     localParticipant,
     activeSpeakerId,
     isJoined,
-    error,
-    leaveMeeting,
+    localStream,
     toggleMicrophone,
     toggleCamera,
     startScreenShare,
-    stopScreenShare,
-  } = useDailyMeeting({
-    meetingId: meeting.id,
-    userId,
-    userName,
-    isHost,
-    onMeetingJoined: () => console.log("Meeting joined!"),
-    onMeetingLeft: () => {
-      console.log("Meeting left");
-      onEndMeeting();
-    },
-    onError: (err) => console.error("Meeting error:", err),
-  });
+    leaveMeeting,
+  } = localMeeting;
+
+  // Attach local video stream
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
 
   // AI Assistant hook
   const meetingAI = useMeetingAI({
@@ -112,7 +104,6 @@ export function LiveMeetingRoom({
     isEnabled: isTranscribing && isJoined,
     speakerName: userName,
     onTranscript: (entry) => {
-      // Feed transcript to AI
       meetingAI.addToTranscript(entry.speaker, entry.text);
     },
   });
@@ -159,8 +150,10 @@ export function LiveMeetingRoom({
     onEndMeeting();
   };
 
-  // Current agenda item
   const currentAgendaItem = meeting.agenda?.[currentAgendaIndex];
+
+  // Get active speaker
+  const activeSpeaker = participants.find((p) => p.id === activeSpeakerId) || localParticipant;
 
   return (
     <div className={cn("h-screen bg-background flex flex-col overflow-hidden relative", className)}>
@@ -203,35 +196,23 @@ export function LiveMeetingRoom({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Now / Next Indicator */}
           {currentAgendaItem && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-1 text-xs">
               <span className="text-primary font-medium">Now:</span>
               <span className="text-foreground">{currentAgendaItem.title}</span>
-              {meeting.agenda?.[currentAgendaIndex + 1] && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">
-                    Next: {meeting.agenda[currentAgendaIndex + 1].title}
-                  </span>
-                </>
-              )}
             </div>
           )}
 
-          {/* Timer */}
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
             <span className="font-mono">{formatTime(elapsedTime)}</span>
           </div>
 
-          {/* Layout Toggle */}
           <div className="hidden sm:flex items-center gap-1 border-l border-border/50 pl-3">
             <Button
               variant={layoutMode === "speaker" ? "secondary" : "ghost"}
               size="iconSm"
               onClick={() => setLayoutMode("speaker")}
-              title="Speaker View"
             >
               <User className="w-4 h-4" />
             </Button>
@@ -239,18 +220,15 @@ export function LiveMeetingRoom({
               variant={layoutMode === "grid" ? "secondary" : "ghost"}
               size="iconSm"
               onClick={() => setLayoutMode("grid")}
-              title="Grid View"
             >
               <LayoutGrid className="w-4 h-4" />
             </Button>
           </div>
 
-          {/* Theme Toggle */}
           <div className="border-l border-border/50 pl-3">
             <ThemeToggle />
           </div>
 
-          {/* Panel Toggles */}
           <div className="flex items-center gap-1 border-l border-border/50 pl-3">
             <Button
               variant={activePanel === "participants" ? "secondary" : "ghost"}
@@ -267,12 +245,8 @@ export function LiveMeetingRoom({
               variant={activePanel === "chat" ? "secondary" : "ghost"}
               size="iconSm"
               onClick={() => togglePanel("chat")}
-              className="relative"
             >
               <MessageSquare className="w-4 h-4" />
-              {messages.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
-              )}
             </Button>
             <Button
               variant={activePanel === "decisions" ? "secondary" : "ghost"}
@@ -299,25 +273,19 @@ export function LiveMeetingRoom({
             >
               <UserPlus className="w-4 h-4" />
             </Button>
-            {/* PTT Mode Toggle */}
             <Button
               variant={pushToTalk.isPTTMode ? "secondary" : "ghost"}
               size="iconSm"
               onClick={pushToTalk.togglePTTMode}
-              title={pushToTalk.isPTTMode ? "Push-to-talk: ON (Space to talk)" : "Push-to-talk: OFF"}
-              className="relative"
+              title={pushToTalk.isPTTMode ? "Push-to-talk: ON" : "Push-to-talk: OFF"}
             >
               <Radio className="w-4 h-4" />
-              {pushToTalk.isPTTMode && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-aurora-violet" />
-              )}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      {/* AI Nudge (floating notification) */}
+      {/* AI Nudge */}
       <AnimatePresence>
         {aiNudge && (
           <motion.div
@@ -352,20 +320,97 @@ export function LiveMeetingRoom({
         )}
       </AnimatePresence>
 
+      {/* Main Content */}
       <div className="flex-1 flex min-h-0">
         {/* Video Area */}
         <div className="flex-1 flex flex-col p-4 min-w-0">
-          {/* Main Grid */}
-          <div className="flex-1 min-h-0">
-            <MeetingGrid
-              participants={participants}
-              activeSpeakerId={activeSpeakerId}
-              layout={layoutMode}
-              className="h-full"
-            />
+          {/* Main Video Grid */}
+          <div className="flex-1 min-h-0 grid gap-3" style={{
+            gridTemplateColumns: layoutMode === "grid" 
+              ? `repeat(${Math.min(Math.ceil(Math.sqrt(participants.length)), 3)}, 1fr)` 
+              : "1fr",
+            gridTemplateRows: layoutMode === "grid" 
+              ? `repeat(${Math.ceil(participants.length / 3)}, 1fr)` 
+              : "1fr",
+          }}>
+            {layoutMode === "speaker" ? (
+              // Speaker view - show active speaker large
+              <div className="relative rounded-2xl overflow-hidden bg-surface-1 border border-border/50">
+                {localParticipant?.isVideoOn && localStream ? (
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover transform -scale-x-100"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-full bg-surface-2 flex items-center justify-center">
+                      <span className="text-4xl font-semibold text-foreground">
+                        {userName.charAt(0)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Speaking indicator */}
+                {localParticipant?.isSpeaking && (
+                  <div className="absolute inset-0 border-2 border-primary rounded-2xl pointer-events-none animate-pulse" />
+                )}
+
+                {/* Name badge */}
+                <div className="absolute bottom-4 left-4 glass-panel rounded-lg px-3 py-1.5">
+                  <div className="flex items-center gap-2">
+                    {localParticipant?.isMuted && <Mic className="w-3 h-3 text-destructive" />}
+                    <span className="text-sm font-medium text-foreground">{userName}</span>
+                    <span className="text-xs text-muted-foreground">(You)</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Grid view - show all participants
+              participants.map((participant) => (
+                <div 
+                  key={participant.id}
+                  className={cn(
+                    "relative rounded-xl overflow-hidden bg-surface-1 border border-border/50",
+                    participant.isSpeaking && "ring-2 ring-primary"
+                  )}
+                >
+                  {participant.isLocal && participant.isVideoOn && localStream ? (
+                    <video
+                      ref={participant.isLocal ? localVideoRef : undefined}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover transform -scale-x-100"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-surface-1 to-surface-2">
+                      <div className="w-16 h-16 rounded-full bg-surface-3 flex items-center justify-center">
+                        <span className="text-2xl font-semibold text-foreground">
+                          {participant.userName.charAt(0)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-2 left-2 glass-panel rounded-lg px-2 py-1">
+                    <div className="flex items-center gap-1.5">
+                      {participant.isMuted && <Mic className="w-3 h-3 text-destructive" />}
+                      <span className="text-xs font-medium text-foreground">
+                        {participant.userName}
+                        {participant.isLocal && " (You)"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
-          {/* AI Participant Card (if enabled) */}
+          {/* AI Participant Card */}
           {isAIEnabled && (
             <div className="mt-3">
               <AIParticipantCard
@@ -426,26 +471,10 @@ export function LiveMeetingRoom({
                   <div className="flex items-center gap-2">
                     <Mic className="w-4 h-4 text-primary" />
                     <span className="font-medium text-foreground">Live Transcript</span>
-                    {transcription.isListening && (
-                      <span className="w-2 h-2 rounded-full bg-aurora-teal animate-pulse" />
-                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant={isTranscribing ? "secondary" : "ghost"}
-                      size="iconSm"
-                      onClick={() => setIsTranscribing(!isTranscribing)}
-                    >
-                      {isTranscribing ? (
-                        <Mic className="w-4 h-4 text-primary" />
-                      ) : (
-                        <Mic className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </Button>
-                    <Button variant="ghost" size="iconSm" onClick={() => setActivePanel("none")}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Button variant="ghost" size="iconSm" onClick={() => setActivePanel("none")}>
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
                 <LiveTranscript
                   transcripts={transcription.transcripts}
