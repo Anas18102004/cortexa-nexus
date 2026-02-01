@@ -202,6 +202,74 @@ export function PermissionBlocked({
   );
 }
 
+// Meeting error state
+interface MeetingErrorProps {
+  error: string;
+  onRetry?: () => void;
+  className?: string;
+}
+
+export function MeetingErrorState({ error, onRetry, className }: MeetingErrorProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={cn(
+        "min-h-screen flex flex-col items-center justify-center bg-background px-4",
+        className
+      )}
+    >
+      {/* Background ambient */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full blur-[120px] bg-destructive/5" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-[100px] bg-aurora-rose/5" />
+      </div>
+
+      <div className="relative z-10 max-w-md text-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", delay: 0.1 }}
+          className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-destructive/10 flex items-center justify-center"
+        >
+          <AlertCircle className="w-10 h-10 text-destructive" />
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-xl font-semibold text-foreground mb-2"
+        >
+          Unable to Join Meeting
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-muted-foreground mb-6 leading-relaxed"
+        >
+          {error}
+        </motion.p>
+
+        {onRetry && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Button onClick={onRetry} className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </Button>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // Network quality indicator
 interface NetworkQualityProps {
   quality: "good" | "fair" | "poor";
