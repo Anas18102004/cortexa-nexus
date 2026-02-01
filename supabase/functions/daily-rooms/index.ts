@@ -53,7 +53,6 @@ serve(async (req) => {
           properties: {
             enable_screenshare: true,
             enable_chat: true,
-            enable_recording: "cloud",
             start_video_off: false,
             start_audio_off: false,
             max_participants: 20,
@@ -108,7 +107,6 @@ serve(async (req) => {
             user_id: userId,
             is_owner: isOwner || false,
             enable_screenshare: true,
-            enable_recording: isOwner ? "cloud" : false,
             start_video_off: false,
             start_audio_off: true,
             exp: Math.floor(Date.now() / 1000) + 86400,
