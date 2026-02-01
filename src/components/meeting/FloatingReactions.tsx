@@ -12,7 +12,7 @@ export function FloatingReactions({ reactions }: FloatingReactionsProps) {
         {reactions.map((reaction) => (
           <motion.div
             key={reaction.id}
-            className="absolute text-4xl md:text-5xl select-none"
+            className="absolute flex flex-col items-center"
             style={{
               left: `${reaction.x}%`,
               bottom: 120, // Start above the control bar
@@ -41,8 +41,9 @@ export function FloatingReactions({ reactions }: FloatingReactionsProps) {
               times: [0, 0.15, 0.4, 0.7, 1],
             }}
           >
+            {/* Emoji */}
             <span 
-              className="drop-shadow-lg"
+              className="text-4xl md:text-5xl select-none drop-shadow-lg"
               style={{
                 filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))",
                 textShadow: "0 2px 10px rgba(0,0,0,0.2)",
@@ -50,6 +51,26 @@ export function FloatingReactions({ reactions }: FloatingReactionsProps) {
             >
               {reaction.emoji}
             </span>
+
+            {/* Sender Avatar */}
+            {reaction.sender && (
+              <motion.div 
+                className="relative mt-1"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1, type: "spring", stiffness: 500, damping: 25 }}
+              >
+                <div className="relative">
+                  <img
+                    src={reaction.sender.avatar}
+                    alt={reaction.sender.name}
+                    className="w-6 h-6 rounded-full border-2 border-background shadow-md object-cover"
+                  />
+                  {/* Glow ring */}
+                  <div className="absolute inset-0 rounded-full bg-primary/30 blur-sm -z-10 animate-pulse" />
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>
