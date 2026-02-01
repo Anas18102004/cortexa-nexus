@@ -22,8 +22,9 @@ export function AgendaTimeline({ items, currentIndex, className }: AgendaTimelin
             <div
               key={item.id}
               className={cn(
-                "flex items-start gap-3 p-2 rounded-lg transition-colors",
-                isActive && "bg-surface-1"
+                "flex items-start gap-3 p-2 rounded-lg transition-all duration-300",
+                isActive && "agenda-active",
+                isCompleted && "opacity-60"
               )}
             >
               {/* Status Icon */}

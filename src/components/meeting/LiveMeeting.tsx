@@ -243,6 +243,9 @@ export function LiveMeeting({
           <SpeakerView
             activeSpeaker={activeSpeaker}
             participants={state.meeting.participants}
+            mode={mode}
+            currentAgendaItem={state.meeting.agenda[state.currentAgendaIndex]}
+            elapsedTime={state.elapsedTime}
             className="flex-1"
           />
 
