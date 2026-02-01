@@ -13,6 +13,7 @@ import { MeetingControlsReal } from "./MeetingControlsReal";
 import { FloatingControls } from "./FloatingControls";
 import { FloatingReactions } from "./FloatingReactions";
 import { ReactionPicker } from "./ReactionPicker";
+import { ReactionActivityFeed } from "./ReactionActivityFeed";
 import { ChatPanel } from "./ChatPanel";
 import { DecisionCapture } from "./DecisionCapture";
 import { ParticipantsList } from "./ParticipantsList";
@@ -61,7 +62,7 @@ interface LiveMeetingRoomLocalProps {
 }
 
 type LayoutMode = "grid" | "speaker" | "spotlight";
-type SidePanel = "none" | "chat" | "decisions" | "participants" | "transcript";
+type SidePanel = "none" | "chat" | "decisions" | "participants" | "transcript" | "reactions";
 
 export function LiveMeetingRoomLocal({
   meeting,
@@ -409,6 +410,19 @@ export function LiveMeetingRoomLocal({
               )}
             </Button>
             <Button
+              variant={activePanel === "reactions" ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={() => togglePanel("reactions")}
+              className="relative"
+            >
+              <span className="text-sm">🎉</span>
+              {floatingReactions.reactionHistory.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full bg-primary text-[10px] flex items-center justify-center text-primary-foreground">
+                  {floatingReactions.reactionHistory.length > 9 ? "9+" : floatingReactions.reactionHistory.length}
+                </span>
+              )}
+            </Button>
+            <Button
               variant="ghost"
               size="iconSm"
               onClick={() => setShowInvite(true)}
@@ -742,6 +756,13 @@ export function LiveMeetingRoomLocal({
                     className="flex-1"
                   />
                 </div>
+              )}
+              {activePanel === "reactions" && (
+                <ReactionActivityFeed
+                  reactionHistory={floatingReactions.reactionHistory}
+                  onClose={() => setActivePanel("none")}
+                  onClearHistory={floatingReactions.clearHistory}
+                />
               )}
             </motion.div>
           )}
