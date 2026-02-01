@@ -14,7 +14,270 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      breakout_room_participants: {
+        Row: {
+          breakout_room_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          breakout_room_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          breakout_room_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breakout_room_participants_breakout_room_id_fkey"
+            columns: ["breakout_room_id"]
+            isOneToOne: false
+            referencedRelation: "breakout_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      breakout_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breakout_rooms_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          meeting_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          meeting_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_participants: {
+        Row: {
+          id: string
+          is_muted: boolean | null
+          is_video_on: boolean | null
+          joined_at: string | null
+          meeting_id: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_muted?: boolean | null
+          is_video_on?: boolean | null
+          joined_at?: string | null
+          meeting_id: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_muted?: boolean | null
+          is_video_on?: boolean | null
+          joined_at?: string | null
+          meeting_id?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          description: string | null
+          host_id: string | null
+          id: string
+          recording_enabled: boolean | null
+          scheduled_end: string | null
+          scheduled_start: string
+          status: string
+          title: string
+          transcription_enabled: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          host_id?: string | null
+          id?: string
+          recording_enabled?: boolean | null
+          scheduled_end?: string | null
+          scheduled_start?: string
+          status?: string
+          title: string
+          transcription_enabled?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          host_id?: string | null
+          id?: string
+          recording_enabled?: boolean | null
+          scheduled_end?: string | null
+          scheduled_start?: string
+          status?: string
+          title?: string
+          transcription_enabled?: boolean | null
+        }
+        Relationships: []
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      whiteboard_annotations: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          meeting_id: string
+          points: Json
+          stroke_width: number | null
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          meeting_id: string
+          points: Json
+          stroke_width?: number | null
+          tool: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          points?: Json
+          stroke_width?: number | null
+          tool?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whiteboard_annotations_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

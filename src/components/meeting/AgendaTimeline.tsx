@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { AgendaItem } from "@/types/meeting";
-import { Check, Clock, Play, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Sparkles } from "lucide-react";
 
 interface AgendaTimelineProps {
   items: AgendaItem[];
@@ -10,81 +10,52 @@ interface AgendaTimelineProps {
 
 export function AgendaTimeline({ items, currentIndex, className }: AgendaTimelineProps) {
   return (
-    <div className={cn("space-y-2", className)}>
-      <div className="flex items-center justify-between px-1 mb-3">
-        <h3 className="text-sm font-medium text-foreground">Agenda</h3>
-        <span className="text-xs text-muted-foreground">
-          {currentIndex + 1}/{items.length}
-        </span>
-      </div>
-
+    <div className={cn("", className)}>
+      <span className="text-sm font-medium text-foreground mb-3 block">Agenda</span>
       <div className="space-y-1">
         {items.map((item, index) => {
-          const isActive = index === currentIndex;
           const isCompleted = item.status === "completed";
+          const isActive = index === currentIndex;
           const isPending = item.status === "pending";
 
           return (
             <div
               key={item.id}
               className={cn(
-                "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300",
-                isActive && "bg-primary/10 shadow-glow-sm",
-                isCompleted && "opacity-60",
-                !isActive && !isCompleted && "hover:bg-surface-2"
+                "flex items-start gap-3 p-2 rounded-lg transition-colors",
+                isActive && "bg-surface-1"
               )}
             >
-              {/* Status Indicator */}
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all",
-                  isCompleted && "bg-aurora-teal/20 text-aurora-teal",
-                  isActive && "bg-primary text-primary-foreground",
-                  isPending && "bg-surface-3 text-muted-foreground"
-                )}
-              >
+              {/* Status Icon */}
+              <div className="mt-0.5">
                 {isCompleted ? (
-                  <Check className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
                 ) : isActive ? (
-                  <Play className="w-4 h-4" />
+                  <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  </div>
                 ) : (
-                  <span className="text-xs font-medium">{index + 1}</span>
+                  <Circle className="w-4 h-4 text-muted-foreground/50" />
                 )}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p
-                    className={cn(
-                      "text-sm font-medium truncate",
-                      isActive && "text-primary",
-                      isCompleted && "text-muted-foreground line-through",
-                      isPending && "text-foreground"
-                    )}
-                  >
-                    {item.title}
-                  </p>
+                <p className={cn(
+                  "text-sm truncate",
+                  isCompleted && "text-muted-foreground line-through",
+                  isActive && "text-foreground font-medium",
+                  isPending && "text-muted-foreground"
+                )}>
+                  {item.title}
+                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                  <span>{item.duration}m</span>
                   {item.aiSuggested && (
-                    <Sparkles className="w-3 h-3 text-aurora-violet shrink-0" />
+                    <Sparkles className="w-3 h-3 text-primary" />
                   )}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {item.owner}
-                  </span>
-                  <span className="text-muted-foreground/50">•</span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {item.duration}m
-                  </span>
-                </div>
               </div>
-
-              {/* Active Indicator Line */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-primary rounded-full" />
-              )}
             </div>
           );
         })}
