@@ -5,7 +5,7 @@ import { PreJoinLobby } from "./PreJoinLobbyReal";
 import { LiveMeetingRoomLocal } from "./LiveMeetingRoomLocal";
 import { PostMeetingSummary } from "./PostMeetingSummary";
 import { MeetingErrorState } from "./MeetingStates";
-import { useLocalMeeting } from "@/hooks/useLocalMeeting";
+import { useRealtimeMeeting } from "@/hooks/useRealtimeMeeting";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 
 type MeetingPhase = "lobby" | "live" | "ended" | "error";
@@ -26,23 +26,28 @@ export function MeetingOrchestrator({
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [meetingError, setMeetingError] = useState<string | null>(null);
 
-  // Local meeting integration (no external provider needed)
-  const localMeeting = useLocalMeeting({
+  // Real-time meeting with Supabase Presence (no fake participants)
+  const realtimeMeeting = useRealtimeMeeting({
     meetingId: meeting.id,
     userId: currentUser.id,
     userName: currentUser.name,
     isHost: currentUser.isHost,
     onMeetingJoined: () => {
-      console.log("Successfully joined meeting");
+      console.log("Successfully joined real-time meeting");
       setPhase("live");
       setMeetingError(null);
     },
     onMeetingLeft: () => {
       console.log("Left meeting");
-      // Only go to ended if we were actually in a live meeting
       if (phase === "live") {
         setPhase("ended");
       }
+    },
+    onParticipantJoined: (participant) => {
+      console.log("Participant joined:", participant.userName);
+    },
+    onParticipantLeft: (id, name) => {
+      console.log("Participant left:", name);
     },
     onError: (err) => {
       console.error("Meeting error:", err);
@@ -62,20 +67,20 @@ export function MeetingOrchestrator({
   // AI assistant
   const meetingAI = useMeetingAI({
     isEnabled: phase === "live",
-    participants: localMeeting.participants,
+    participants: realtimeMeeting.participants,
   });
 
   const handleJoinMeeting = useCallback(async (audio: boolean, video: boolean) => {
     setAudioEnabled(audio);
     setVideoEnabled(video);
     setMeetingError(null);
-    await localMeeting.joinMeeting();
-  }, [localMeeting]);
+    await realtimeMeeting.joinMeeting();
+  }, [realtimeMeeting]);
 
   const handleEndMeeting = useCallback(async () => {
-    await localMeeting.leaveMeeting();
+    await realtimeMeeting.leaveMeeting();
     setPhase("ended");
-  }, [localMeeting]);
+  }, [realtimeMeeting]);
 
   const handleRejoin = useCallback(() => {
     setPhase("lobby");
@@ -105,6 +110,22 @@ export function MeetingOrchestrator({
     uiMode: "review",
   });
 
+  // Adapt realtimeMeeting to match expected interface
+  const adaptedMeeting = {
+    ...realtimeMeeting,
+    // Map RealtimeParticipant to LocalParticipant interface
+    participants: realtimeMeeting.participants.map(p => ({
+      ...p,
+      audioTrack: null,
+      videoTrack: null,
+    })),
+    localParticipant: realtimeMeeting.localParticipant ? {
+      ...realtimeMeeting.localParticipant,
+      audioTrack: null,
+      videoTrack: null,
+    } : null,
+  };
+
   return (
     <div className={cn("min-h-screen bg-background", className)}>
       {phase === "lobby" && (
@@ -112,7 +133,7 @@ export function MeetingOrchestrator({
           meetingTitle={meeting.title}
           currentUser={currentUser}
           onJoinMeeting={handleJoinMeeting}
-          isJoining={localMeeting.isJoining}
+          isJoining={realtimeMeeting.isJoining}
         />
       )}
 
@@ -122,7 +143,7 @@ export function MeetingOrchestrator({
           userId={currentUser.id}
           userName={currentUser.name}
           isHost={currentUser.isHost}
-          localMeeting={localMeeting}
+          localMeeting={adaptedMeeting as any}
           onEndMeeting={handleEndMeeting}
         />
       )}
@@ -144,4 +165,3 @@ export function MeetingOrchestrator({
     </div>
   );
 }
-

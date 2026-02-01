@@ -1,147 +1,33 @@
-import { useState, useEffect } from "react";
-import { PreMeetingLobby } from "@/components/meeting/PreMeetingLobby";
-import { LiveMeeting } from "@/components/meeting/LiveMeeting";
-import { PostMeetingSummary } from "@/components/meeting/PostMeetingSummary";
+import { useState } from "react";
 import { MeetingOrchestrator } from "@/components/meeting/MeetingOrchestrator";
 import { 
   mockMeeting, 
-  mockMeetingState, 
   currentUser as initialUser 
 } from "@/data/mockMeeting";
-import { Participant, MeetingState } from "@/types/meeting";
-import { Button } from "@/components/ui/button";
-import { Video, Monitor } from "lucide-react";
+import { Participant } from "@/types/meeting";
 
-type MeetingPhase = "lobby" | "live" | "summary";
-type MeetingMode = "demo" | "real";
-
+/**
+ * Main index page - Host starts a new meeting
+ */
 const Index = () => {
-  const [mode, setMode] = useState<MeetingMode>("demo");
-  const [phase, setPhase] = useState<MeetingPhase>("lobby");
-  const [currentUser, setCurrentUser] = useState<Participant>(initialUser);
-  const [meetingState, setMeetingState] = useState<MeetingState>({
-    ...mockMeetingState,
-    elapsedTime: 0,
-    uiMode: "focus",
+  const [currentUser] = useState<Participant>({
+    ...initialUser,
+    // Host always gets a unique ID for the session
+    id: `host-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    isHost: true,
   });
-  const [elapsedTime, setElapsedTime] = useState(0);
 
-  // Timer for live meeting
-  useEffect(() => {
-    if (phase === "live" && mode === "demo") {
-      const interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-        setMeetingState((prev) => ({
-          ...prev,
-          elapsedTime: prev.elapsedTime + 1,
-        }));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [phase, mode]);
+  // Generate a unique meeting ID for each session
+  const [meeting] = useState(() => ({
+    ...mockMeeting,
+    id: `meeting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  }));
 
-  const handleJoin = () => {
-    setPhase("live");
-    setElapsedTime(0);
-    setMeetingState((prev) => ({
-      ...prev,
-      elapsedTime: 0,
-      meeting: {
-        ...prev.meeting,
-        status: "live",
-      },
-    }));
-  };
-
-  const handleEndMeeting = () => {
-    setPhase("summary");
-  };
-
-  const handleCloseSummary = () => {
-    setPhase("lobby");
-    setElapsedTime(0);
-    setMeetingState(mockMeetingState);
-  };
-
-  const handleToggleMute = () => {
-    setCurrentUser((prev) => ({
-      ...prev,
-      isMuted: !prev.isMuted,
-    }));
-  };
-
-  const handleToggleVideo = () => {
-    setCurrentUser((prev) => ({
-      ...prev,
-      isVideoOn: !prev.isVideoOn,
-    }));
-  };
-
-  // Real WebRTC meeting mode
-  if (mode === "real") {
-    return (
-      <div className="relative">
-        {/* Mode Toggle */}
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setMode("demo")}
-            className="glass-panel"
-          >
-            <Monitor className="w-4 h-4 mr-2" />
-            Switch to Demo
-          </Button>
-        </div>
-        
-        <MeetingOrchestrator
-          meeting={mockMeeting}
-          currentUser={currentUser}
-        />
-      </div>
-    );
-  }
-
-  // Demo mode with mock data
   return (
-    <div className="relative">
-      {/* Mode Toggle */}
-      <div className="fixed top-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setMode("real")}
-          className="glass-panel"
-        >
-          <Video className="w-4 h-4 mr-2" />
-          Try Real Meeting
-        </Button>
-      </div>
-
-      {phase === "lobby" && (
-        <PreMeetingLobby
-          meeting={mockMeeting}
-          currentUser={currentUser}
-          onJoin={handleJoin}
-          onToggleMute={handleToggleMute}
-          onToggleVideo={handleToggleVideo}
-        />
-      )}
-      {phase === "live" && (
-        <LiveMeeting
-          state={meetingState}
-          currentUser={currentUser}
-          onEndMeeting={handleEndMeeting}
-        />
-      )}
-      {phase === "summary" && (
-        <PostMeetingSummary
-          meeting={meetingState.meeting}
-          duration={elapsedTime}
-          onClose={handleCloseSummary}
-        />
-      )}
-    </div>
+    <MeetingOrchestrator
+      meeting={meeting}
+      currentUser={currentUser}
+    />
   );
 };
 
