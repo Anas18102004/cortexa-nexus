@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useDailyMeeting, MeetingParticipant } from "@/hooks/useDailyMeeting";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
+import { useLiveTranscription } from "@/hooks/useLiveTranscription";
+import { usePushToTalk } from "@/hooks/usePushToTalk";
 import { MeetingGrid } from "./MeetingGrid";
 import { AIParticipantCard } from "./AIParticipantCard";
 import { MeetingControlsReal } from "./MeetingControlsReal";
@@ -9,8 +11,12 @@ import { ChatPanel } from "./ChatPanel";
 import { DecisionCapture } from "./DecisionCapture";
 import { ParticipantsList } from "./ParticipantsList";
 import { InviteModal } from "./InviteModal";
+import { LiveTranscript } from "./LiveTranscript";
+import { AINudge } from "./AIInsightCard";
+import { JoiningState, EmptyMeetingState, ReconnectingState } from "./MeetingStates";
 import { useMeetingChat } from "@/hooks/useMeetingChat";
 import { Meeting, Decision, ActionItem, AgendaItem } from "@/types/meeting";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Clock, 
   MessageSquare, 
@@ -23,9 +29,12 @@ import {
   User,
   Maximize2,
   Users,
-  UserPlus
+  UserPlus,
+  Mic,
+  Radio
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface LiveMeetingRoomProps {
   meeting: Meeting;
@@ -37,7 +46,7 @@ interface LiveMeetingRoomProps {
 }
 
 type LayoutMode = "grid" | "speaker" | "sidebar";
-type SidePanel = "none" | "chat" | "decisions" | "participants";
+type SidePanel = "none" | "chat" | "decisions" | "participants" | "transcript";
 
 export function LiveMeetingRoom({
   meeting,
@@ -53,6 +62,8 @@ export function LiveMeetingRoom({
   const [isAIEnabled, setIsAIEnabled] = useState(true);
   const [currentAgendaIndex, setCurrentAgendaIndex] = useState(0);
   const [showInvite, setShowInvite] = useState(false);
+  const [aiNudge, setAiNudge] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(true);
 
   // Daily.co meeting hook
   const {
@@ -85,9 +96,39 @@ export function LiveMeetingRoom({
     participants,
     onDecisionDetected: (decision) => {
       console.log("Decision detected:", decision);
+      setAiNudge(`Decision captured: "${decision.content.slice(0, 50)}..."`);
+      setTimeout(() => setAiNudge(null), 5000);
     },
     onActionItemDetected: (action) => {
       console.log("Action detected:", action);
+      setAiNudge(`Action item: ${action.task.slice(0, 50)}...`);
+      setTimeout(() => setAiNudge(null), 5000);
+    },
+  });
+
+  // Live transcription hook
+  const transcription = useLiveTranscription({
+    isEnabled: isTranscribing && isJoined,
+    speakerName: userName,
+    onTranscript: (entry) => {
+      // Feed transcript to AI
+      meetingAI.addToTranscript(entry.speaker, entry.text);
+    },
+  });
+
+  // Push-to-talk hook
+  const pushToTalk = usePushToTalk({
+    isEnabled: isJoined,
+    onActivate: () => {
+      if (localParticipant?.isMuted) {
+        toggleMicrophone();
+        toast.info("Microphone activated", { duration: 1000 });
+      }
+    },
+    onDeactivate: () => {
+      if (localParticipant && !localParticipant.isMuted) {
+        toggleMicrophone();
+      }
     },
   });
 
@@ -235,17 +276,76 @@ export function LiveMeetingRoom({
               <Target className="w-4 h-4" />
             </Button>
             <Button
+              variant={activePanel === "transcript" ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={() => togglePanel("transcript")}
+              className="relative"
+            >
+              <Mic className="w-4 h-4" />
+              {transcription.isListening && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-aurora-teal animate-pulse" />
+              )}
+            </Button>
+            <Button
               variant="ghost"
               size="iconSm"
               onClick={() => setShowInvite(true)}
             >
               <UserPlus className="w-4 h-4" />
             </Button>
+            {/* PTT Mode Toggle */}
+            <Button
+              variant={pushToTalk.isPTTMode ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={pushToTalk.togglePTTMode}
+              title={pushToTalk.isPTTMode ? "Push-to-talk: ON (Space to talk)" : "Push-to-talk: OFF"}
+              className="relative"
+            >
+              <Radio className="w-4 h-4" />
+              {pushToTalk.isPTTMode && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-aurora-violet" />
+              )}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
+      {/* AI Nudge (floating notification) */}
+      <AnimatePresence>
+        {aiNudge && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-20 left-1/2 -translate-x-1/2 z-20"
+          >
+            <AINudge 
+              message={aiNudge} 
+              type="decision" 
+              onDismiss={() => setAiNudge(null)} 
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Push-to-talk indicator */}
+      <AnimatePresence>
+        {pushToTalk.isPTTMode && pushToTalk.isPressed && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50"
+          >
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground shadow-glow-lg">
+              <Mic className="w-5 h-5" />
+              <span className="font-medium">Speaking...</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex-1 flex min-h-0">
         {/* Video Area */}
         <div className="flex-1 flex flex-col p-4 min-w-0">
@@ -273,7 +373,13 @@ export function LiveMeetingRoom({
 
         {/* Side Panel */}
         {activePanel !== "none" && (
-          <div className="w-80 border-l border-border/50 flex flex-col animate-slide-in-right">
+          <motion.div 
+            initial={{ x: 320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 320, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="w-80 border-l border-border/50 flex flex-col bg-surface-0/50 backdrop-blur-sm"
+          >
             {activePanel === "participants" && (
               <ParticipantsList
                 participants={participants}
@@ -308,7 +414,43 @@ export function LiveMeetingRoom({
                 </div>
               </div>
             )}
-          </div>
+            {activePanel === "transcript" && (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between p-3 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <Mic className="w-4 h-4 text-primary" />
+                    <span className="font-medium text-foreground">Live Transcript</span>
+                    {transcription.isListening && (
+                      <span className="w-2 h-2 rounded-full bg-aurora-teal animate-pulse" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant={isTranscribing ? "secondary" : "ghost"}
+                      size="iconSm"
+                      onClick={() => setIsTranscribing(!isTranscribing)}
+                    >
+                      {isTranscribing ? (
+                        <Mic className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Mic className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                    <Button variant="ghost" size="iconSm" onClick={() => setActivePanel("none")}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <LiveTranscript
+                  transcripts={transcription.transcripts}
+                  interimText={transcription.interimText}
+                  currentSpeaker={userName}
+                  isAIProcessing={meetingAI.isProcessing}
+                  className="flex-1"
+                />
+              </div>
+            )}
+          </motion.div>
         )}
       </div>
 
