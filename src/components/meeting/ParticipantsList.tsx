@@ -1,34 +1,40 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { MeetingParticipant } from "@/hooks/useDailyMeeting";
-import { ParticipantCard, ParticipantCardCompact } from "./ParticipantCard";
+import { BaseParticipant, ParticipantCard, ParticipantCardCompact } from "./ParticipantCard";
 import { InviteModal } from "./InviteModal";
 import { 
   Users, 
   UserPlus, 
   Sparkles,
   Search,
-  X
+  X,
+  VolumeX,
+  Hand
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AnimatePresence } from "framer-motion";
 
 // Mock role data for participants (in production, fetch from database)
 const mockParticipantRoles: Record<string, { title: string; department: string }> = {
   "user-1": { title: "Product Manager", department: "Product" },
-  "user-2": { title: "Frontend Developer", department: "Engineering" },
-  "user-3": { title: "UX Designer", department: "Design" },
-  "user-4": { title: "Backend Developer", department: "Engineering" },
-  "user-5": { title: "AI Engineer", department: "AI/ML" },
+  "sim-1": { title: "Frontend Developer", department: "Engineering" },
+  "sim-2": { title: "UX Designer", department: "Design" },
+  "sim-3": { title: "Backend Developer", department: "Engineering" },
 };
 
 interface ParticipantsListProps {
-  participants: MeetingParticipant[];
+  participants: BaseParticipant[];
   meetingId: string;
   meetingTitle: string;
   isHost?: boolean;
   isAIEnabled?: boolean;
+  onMuteParticipant?: (participantId: string) => void;
+  onRemoveParticipant?: (participantId: string) => void;
+  onSpotlightParticipant?: (participantId: string) => void;
+  onMuteAll?: () => void;
+  onLowerAllHands?: () => void;
   onClose?: () => void;
   className?: string;
 }
@@ -39,6 +45,11 @@ export function ParticipantsList({
   meetingTitle,
   isHost = false,
   isAIEnabled = true,
+  onMuteParticipant,
+  onRemoveParticipant,
+  onSpotlightParticipant,
+  onMuteAll,
+  onLowerAllHands,
   onClose,
   className,
 }: ParticipantsListProps) {
@@ -50,9 +61,13 @@ export function ParticipantsList({
     p.userName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Group by speaking status for better UX
-  const speakingParticipants = filteredParticipants.filter(p => p.isSpeaking && !p.isMuted);
-  const otherParticipants = filteredParticipants.filter(p => !p.isSpeaking || p.isMuted);
+  // Count raised hands
+  const raisedHandsCount = participants.filter(p => p.isHandRaised).length;
+
+  // Group by status
+  const handRaisedParticipants = filteredParticipants.filter(p => p.isHandRaised);
+  const speakingParticipants = filteredParticipants.filter(p => p.isSpeaking && !p.isMuted && !p.isHandRaised);
+  const otherParticipants = filteredParticipants.filter(p => !p.isSpeaking && !p.isHandRaised || (p.isMuted && !p.isHandRaised));
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -79,6 +94,34 @@ export function ParticipantsList({
           )}
         </div>
       </div>
+
+      {/* Host Controls */}
+      {isHost && (onMuteAll || (onLowerAllHands && raisedHandsCount > 0)) && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-border/30">
+          {onMuteAll && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onMuteAll}
+              className="h-7 text-xs gap-1.5"
+            >
+              <VolumeX className="w-3 h-3" />
+              Mute All
+            </Button>
+          )}
+          {onLowerAllHands && raisedHandsCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLowerAllHands}
+              className="h-7 text-xs gap-1.5"
+            >
+              <Hand className="w-3 h-3" />
+              Lower All ({raisedHandsCount})
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Search */}
       {participants.length > 4 && (
@@ -119,6 +162,36 @@ export function ParticipantsList({
             </div>
           )}
 
+          {/* Hand Raised */}
+          <AnimatePresence>
+            {handRaisedParticipants.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-aurora-violet uppercase tracking-wider px-1 flex items-center gap-1">
+                  <Hand className="w-3 h-3" />
+                  Hand Raised
+                </p>
+                <div className="space-y-2">
+                  {handRaisedParticipants.map((participant) => {
+                    const role = mockParticipantRoles[participant.id] || { title: "Member", department: "" };
+                    return (
+                      <ParticipantCard
+                        key={participant.id}
+                        participant={participant}
+                        roleTitle={role.title}
+                        department={role.department}
+                        isHost={participant.isOwner}
+                        isCurrentUserHost={isHost}
+                        onMute={onMuteParticipant ? () => onMuteParticipant(participant.id) : undefined}
+                        onRemove={onRemoveParticipant ? () => onRemoveParticipant(participant.id) : undefined}
+                        onSpotlight={onSpotlightParticipant ? () => onSpotlightParticipant(participant.id) : undefined}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </AnimatePresence>
+
           {/* Speaking Now */}
           {speakingParticipants.length > 0 && (
             <div className="space-y-2">
@@ -126,7 +199,36 @@ export function ParticipantsList({
                 Speaking Now
               </p>
               <div className="space-y-2">
-                {speakingParticipants.map((participant) => {
+                <AnimatePresence>
+                  {speakingParticipants.map((participant) => {
+                    const role = mockParticipantRoles[participant.id] || { title: "Member", department: "" };
+                    return (
+                      <ParticipantCard
+                        key={participant.id}
+                        participant={participant}
+                        roleTitle={role.title}
+                        department={role.department}
+                        isHost={participant.isOwner}
+                        isCurrentUserHost={isHost}
+                        onMute={onMuteParticipant ? () => onMuteParticipant(participant.id) : undefined}
+                        onRemove={onRemoveParticipant ? () => onRemoveParticipant(participant.id) : undefined}
+                        onSpotlight={onSpotlightParticipant ? () => onSpotlightParticipant(participant.id) : undefined}
+                      />
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {/* All Participants */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider px-1">
+              {handRaisedParticipants.length > 0 || speakingParticipants.length > 0 ? "Others" : "In Meeting"}
+            </p>
+            <div className="space-y-2">
+              <AnimatePresence>
+                {otherParticipants.map((participant) => {
                   const role = mockParticipantRoles[participant.id] || { title: "Member", department: "" };
                   return (
                     <ParticipantCard
@@ -135,34 +237,14 @@ export function ParticipantsList({
                       roleTitle={role.title}
                       department={role.department}
                       isHost={participant.isOwner}
-                      className="fade-in"
+                      isCurrentUserHost={isHost}
+                      onMute={onMuteParticipant && !participant.isLocal ? () => onMuteParticipant(participant.id) : undefined}
+                      onRemove={onRemoveParticipant && !participant.isLocal ? () => onRemoveParticipant(participant.id) : undefined}
+                      onSpotlight={onSpotlightParticipant ? () => onSpotlightParticipant(participant.id) : undefined}
                     />
                   );
                 })}
-              </div>
-            </div>
-          )}
-
-          {/* All Participants */}
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider px-1">
-              {speakingParticipants.length > 0 ? "Others" : "In Meeting"}
-            </p>
-            <div className="space-y-2">
-              {otherParticipants.map((participant) => {
-                const role = mockParticipantRoles[participant.id] || { title: "Member", department: "" };
-                return (
-                  <ParticipantCard
-                    key={participant.id}
-                    participant={participant}
-                    roleTitle={role.title}
-                    department={role.department}
-                    isHost={participant.isOwner}
-                    onRemove={isHost && !participant.isLocal ? () => {} : undefined}
-                    className="fade-in"
-                  />
-                );
-              })}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -185,7 +267,7 @@ export function ParticipantsFilmstrip({
   isAIEnabled = true,
   className,
 }: {
-  participants: MeetingParticipant[];
+  participants: BaseParticipant[];
   isAIEnabled?: boolean;
   className?: string;
 }) {

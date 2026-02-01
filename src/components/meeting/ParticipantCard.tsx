@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { MeetingParticipant } from "@/hooks/useDailyMeeting";
 import { 
   Mic, 
   MicOff, 
@@ -8,9 +7,11 @@ import {
   Sparkles,
   MoreHorizontal,
   UserMinus,
-  Volume2
+  Hand,
+  Pin,
+  VolumeX
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -20,8 +21,24 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { motion } from "framer-motion";
+
+// Base participant type that works with both MeetingParticipant and LocalParticipant
+export interface BaseParticipant {
+  id: string;
+  sessionId: string;
+  userName: string;
+  isLocal: boolean;
+  isOwner: boolean;
+  isMuted: boolean;
+  isVideoOn: boolean;
+  isSpeaking: boolean;
+  isHandRaised?: boolean; // Optional for backward compatibility
+  joinedAt: Date;
+}
 
 // Role type mapping for visual styling
 type RoleCategory = "engineering" | "product" | "design" | "ai" | "default";
@@ -35,7 +52,6 @@ interface RoleConfig {
 }
 
 const roleConfigs: Record<string, RoleConfig> = {
-  // Engineering roles → Cyan accent
   "Engineering Lead": { 
     category: "engineering", 
     accentClass: "text-aurora-cyan",
@@ -64,7 +80,6 @@ const roleConfigs: Record<string, RoleConfig> = {
     borderClass: "border-primary/40",
     bgGradient: "from-primary/15 to-aurora-violet/10"
   },
-  // Product roles → Violet accent
   "Product Manager": { 
     category: "product", 
     accentClass: "text-aurora-violet",
@@ -79,7 +94,6 @@ const roleConfigs: Record<string, RoleConfig> = {
     borderClass: "border-aurora-violet/30",
     bgGradient: "from-aurora-violet/10 to-transparent"
   },
-  // Design roles → Rose/Amber accent (using rose as our warm color)
   "Designer": { 
     category: "design", 
     accentClass: "text-aurora-rose",
@@ -88,13 +102,6 @@ const roleConfigs: Record<string, RoleConfig> = {
     bgGradient: "from-aurora-rose/10 to-transparent"
   },
   "UX Designer": { 
-    category: "design", 
-    accentClass: "text-aurora-rose",
-    glowClass: "shadow-[0_0_20px_hsl(340_75%_55%/0.15)]",
-    borderClass: "border-aurora-rose/30",
-    bgGradient: "from-aurora-rose/10 to-transparent"
-  },
-  "UI Designer": { 
     category: "design", 
     accentClass: "text-aurora-rose",
     glowClass: "shadow-[0_0_20px_hsl(340_75%_55%/0.15)]",
@@ -115,23 +122,24 @@ function getRoleConfig(roleTitle: string): RoleConfig {
   return roleConfigs[roleTitle] || defaultRoleConfig;
 }
 
-// Presence state type
-type PresenceState = "speaking" | "listening" | "muted" | "idle" | "disconnected";
+type PresenceState = "speaking" | "listening" | "muted" | "idle";
 
-function getPresenceState(participant: MeetingParticipant): PresenceState {
-  // Assume connected if we have the participant
+function getPresenceState(participant: BaseParticipant): PresenceState {
   if (participant.isSpeaking && !participant.isMuted) return "speaking";
   if (participant.isMuted) return "muted";
   return "listening";
 }
 
 interface ParticipantCardProps {
-  participant: MeetingParticipant;
+  participant: BaseParticipant;
   roleTitle?: string;
   department?: string;
   isHost?: boolean;
   isAI?: boolean;
+  isCurrentUserHost?: boolean;
+  onMute?: () => void;
   onRemove?: () => void;
+  onSpotlight?: () => void;
   className?: string;
 }
 
@@ -141,15 +149,22 @@ export function ParticipantCard({
   department = "",
   isHost = false,
   isAI = false,
+  isCurrentUserHost = false,
+  onMute,
   onRemove,
+  onSpotlight,
   className,
 }: ParticipantCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const roleConfig = getRoleConfig(roleTitle);
   const presenceState = getPresenceState(participant);
+  const isHandRaised = participant.isHandRaised ?? false;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
         "group relative rounded-xl p-3 transition-all duration-300 border",
         "bg-gradient-to-br",
@@ -170,7 +185,6 @@ export function ParticipantCard({
             "w-10 h-10 ring-2 ring-offset-2 ring-offset-background transition-all duration-300",
             presenceState === "speaking" ? "ring-primary" : 
             presenceState === "muted" ? "ring-destructive/50" :
-            presenceState === "disconnected" ? "ring-muted/30" :
             "ring-transparent"
           )}>
             <AvatarFallback className={cn(
@@ -190,13 +204,14 @@ export function ParticipantCard({
           {presenceState === "speaking" && (
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-end gap-0.5 h-3">
               {[...Array(4)].map((_, i) => (
-                <div
+                <motion.div
                   key={i}
-                  className="w-0.5 bg-primary rounded-full animate-pulse"
-                  style={{
-                    height: `${4 + Math.random() * 8}px`,
-                    animationDelay: `${i * 100}ms`,
-                    animationDuration: "0.6s",
+                  className="w-0.5 bg-primary rounded-full"
+                  animate={{ height: [4, 8 + Math.random() * 4, 4] }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: Infinity,
+                    delay: i * 0.1,
                   }}
                 />
               ))}
@@ -208,6 +223,17 @@ export function ParticipantCard({
             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
               <MicOff className="w-2.5 h-2.5 text-destructive-foreground" />
             </div>
+          )}
+
+          {/* Hand raised indicator */}
+          {isHandRaised && (
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-aurora-violet flex items-center justify-center"
+            >
+              <Hand className="w-3 h-3 text-white fill-current" />
+            </motion.div>
           )}
         </div>
 
@@ -243,7 +269,7 @@ export function ParticipantCard({
         </div>
 
         {/* Actions (visible on hover for host) */}
-        {isHovered && onRemove && !participant.isLocal && (
+        {isHovered && isCurrentUserHost && !participant.isLocal && (
           <DropdownMenu>
             <DropdownMenuTrigger className="opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="w-6 h-6 rounded-md bg-surface-3 flex items-center justify-center hover:bg-surface-2">
@@ -251,10 +277,25 @@ export function ParticipantCard({
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onRemove} className="text-destructive">
-                <UserMinus className="w-4 h-4 mr-2" />
-                Remove from meeting
-              </DropdownMenuItem>
+              {onSpotlight && (
+                <DropdownMenuItem onClick={onSpotlight}>
+                  <Pin className="w-4 h-4 mr-2" />
+                  Spotlight
+                </DropdownMenuItem>
+              )}
+              {onMute && !participant.isMuted && (
+                <DropdownMenuItem onClick={onMute}>
+                  <VolumeX className="w-4 h-4 mr-2" />
+                  Mute
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              {onRemove && (
+                <DropdownMenuItem onClick={onRemove} className="text-destructive">
+                  <UserMinus className="w-4 h-4 mr-2" />
+                  Remove from meeting
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -268,7 +309,7 @@ export function ParticipantCard({
         presenceState === "muted" ? "bg-destructive/50" :
         "bg-transparent"
       )} />
-    </div>
+    </motion.div>
   );
 }
 
@@ -278,9 +319,10 @@ export function ParticipantCardCompact({
   roleTitle = "Member",
   isAI = false,
   className,
-}: Omit<ParticipantCardProps, "department" | "isHost" | "onRemove">) {
+}: Omit<ParticipantCardProps, "department" | "isHost" | "onRemove" | "onMute" | "onSpotlight" | "isCurrentUserHost">) {
   const roleConfig = getRoleConfig(roleTitle);
   const presenceState = getPresenceState(participant);
+  const isHandRaised = participant.isHandRaised ?? false;
 
   return (
     <Tooltip>
@@ -312,11 +354,20 @@ export function ParticipantCardCompact({
               <MicOff className="w-2 h-2 text-destructive-foreground" />
             </div>
           )}
+
+          {isHandRaised && (
+            <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-aurora-violet flex items-center justify-center">
+              <Hand className="w-2 h-2 text-white fill-current" />
+            </div>
+          )}
         </div>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
         <p className="font-medium">{participant.userName}</p>
         <p className={cn("text-xs", roleConfig.accentClass)}>{roleTitle}</p>
+        {isHandRaised && (
+          <p className="text-aurora-violet">✋ Hand raised</p>
+        )}
       </TooltipContent>
     </Tooltip>
   );

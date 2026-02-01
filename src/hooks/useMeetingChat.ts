@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   userId: string;
   userName: string;
@@ -8,6 +8,8 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   reactions: { emoji: string; count: number; hasReacted: boolean }[];
+  isSystem?: boolean;
+  systemType?: "join" | "leave" | "recording" | "screenshare" | "hand" | "mute";
 }
 
 // Mock current user ID for demo
@@ -100,9 +102,65 @@ export function useMeetingChat() {
     );
   }, []);
 
+  // Add system message
+  const addSystemMessage = useCallback((
+    content: string, 
+    systemType: ChatMessage["systemType"],
+    userName?: string
+  ) => {
+    const systemMessage: ChatMessage = {
+      id: `sys-${Date.now()}`,
+      userId: "system",
+      userName: userName || "System",
+      userAvatar: "",
+      content,
+      timestamp: new Date(),
+      reactions: [],
+      isSystem: true,
+      systemType,
+    };
+    setMessages((prev) => [...prev, systemMessage]);
+  }, []);
+
+  // Convenience methods for common system messages
+  const addJoinMessage = useCallback((userName: string) => {
+    addSystemMessage(`${userName} joined the meeting`, "join", userName);
+  }, [addSystemMessage]);
+
+  const addLeaveMessage = useCallback((userName: string) => {
+    addSystemMessage(`${userName} left the meeting`, "leave", userName);
+  }, [addSystemMessage]);
+
+  const addRecordingMessage = useCallback((isStarting: boolean) => {
+    addSystemMessage(
+      isStarting ? "Recording started" : "Recording stopped", 
+      "recording"
+    );
+  }, [addSystemMessage]);
+
+  const addScreenShareMessage = useCallback((userName: string, isStarting: boolean) => {
+    addSystemMessage(
+      isStarting 
+        ? `${userName} started sharing their screen` 
+        : `${userName} stopped sharing their screen`,
+      "screenshare",
+      userName
+    );
+  }, [addSystemMessage]);
+
+  const addHandRaisedMessage = useCallback((userName: string) => {
+    addSystemMessage(`${userName} raised their hand`, "hand", userName);
+  }, [addSystemMessage]);
+
   return {
     messages,
     sendMessage,
     addReaction,
+    addSystemMessage,
+    addJoinMessage,
+    addLeaveMessage,
+    addRecordingMessage,
+    addScreenShareMessage,
+    addHandRaisedMessage,
   };
 }
