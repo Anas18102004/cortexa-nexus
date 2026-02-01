@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 import { AIInsight, AIMode } from "@/types/meeting";
 import { 
-  Sparkles, 
   Lightbulb, 
   AlertTriangle, 
   CheckCircle2,
   Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import novaAiLogo from "@/assets/nova-ai-logo.png";
 
 interface AIAgentProps {
   mode: AIMode;
@@ -50,13 +50,13 @@ export function AIAgent({
       {/* AI Header - Minimal */}
       <div className="flex items-center gap-3 mb-4">
         <div className={cn(
-          "w-9 h-9 rounded-xl bg-gradient-to-br from-aurora-teal to-aurora-cyan flex items-center justify-center transition-all",
+          "w-9 h-9 rounded-xl overflow-hidden transition-all",
           isThinking && "ai-pulse"
         )}>
-          <Sparkles className="w-4 h-4 text-background" />
+          <img src={novaAiLogo} alt="Nova AI" className="w-full h-full object-cover" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground">Nexus AI</p>
+          <p className="text-sm font-medium text-foreground">Nova AI</p>
           <p className="text-xs text-muted-foreground">
             {isThinking ? "Processing..." : `${modeLabels[mode]} mode`}
           </p>

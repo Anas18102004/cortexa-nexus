@@ -67,11 +67,11 @@ export const mockParticipants: Participant[] = [
   },
   {
     id: "ai",
-    name: "Nexus AI",
-    avatar: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=200&h=200&fit=crop",
+    name: "Nova AI",
+    avatar: "/placeholder.svg",
     role: {
       title: "AI Assistant",
-      department: "Cortexa",
+      department: "Meeting Intelligence",
       skills: ["Meeting Intelligence", "Decision Capture", "Context Analysis"],
       authorityLevel: "member",
       availability: "available",

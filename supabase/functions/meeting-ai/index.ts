@@ -34,12 +34,12 @@ serve(async (req) => {
 
     switch (action) {
       case "summarize":
-        systemPrompt = `You are Cortexa AI, an intelligent meeting assistant. You provide concise, actionable summaries of meeting discussions. Focus on key points, decisions made, and next steps. Be professional but conversational.`;
+        systemPrompt = `You are Nova AI, an intelligent meeting assistant. You provide concise, actionable summaries of meeting discussions. Focus on key points, decisions made, and next steps. Be professional but conversational.`;
         userPrompt = `Summarize the following meeting transcript in 3-5 bullet points:\n\n${transcript}`;
         break;
 
       case "decisions":
-        systemPrompt = `You are Cortexa AI, specialized in extracting decisions from meetings. Identify clear decisions, who owns them, and their status (proposed, confirmed, or deferred).`;
+        systemPrompt = `You are Nova AI, specialized in extracting decisions from meetings. Identify clear decisions, who owns them, and their status (proposed, confirmed, or deferred).`;
         userPrompt = `Extract all decisions from this meeting transcript. For each decision, provide:
 - Content: The decision made
 - Owner: Who is responsible
@@ -53,7 +53,7 @@ Return as JSON array: [{"content": "...", "owner": "...", "status": "..."}]`;
         break;
 
       case "actions":
-        systemPrompt = `You are Cortexa AI, specialized in extracting action items from meetings. Identify tasks, assignees, priorities, and deadlines.`;
+        systemPrompt = `You are Nova AI, specialized in extracting action items from meetings. Identify tasks, assignees, priorities, and deadlines.`;
         userPrompt = `Extract all action items from this meeting transcript. For each action:
 - Task: What needs to be done
 - Assignee: Who is responsible
@@ -68,7 +68,7 @@ Return as JSON array: [{"task": "...", "assignee": "...", "priority": "...", "de
         break;
 
       case "transcribe":
-        systemPrompt = `You are Cortexa AI. Clean up and format the provided speech-to-text transcription. Fix grammar, punctuation, and speaker attribution where possible. Maintain the original meaning.`;
+        systemPrompt = `You are Nova AI. Clean up and format the provided speech-to-text transcription. Fix grammar, punctuation, and speaker attribution where possible. Maintain the original meaning.`;
         userPrompt = `Clean up this transcription:\n\n${transcript}`;
         break;
 

@@ -5,7 +5,7 @@ import { PreJoinLobby } from "./PreJoinLobbyReal";
 import { LiveMeetingRoomLocal } from "./LiveMeetingRoomLocal";
 import { PostMeetingSummary } from "./PostMeetingSummary";
 import { MeetingErrorState } from "./MeetingStates";
-import { useRealtimeMeeting } from "@/hooks/useRealtimeMeeting";
+import { useRealtimeMeetingWebRTC } from "@/hooks/useRealtimeMeetingWebRTC";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 
 type MeetingPhase = "lobby" | "live" | "ended" | "error";
@@ -25,15 +25,16 @@ export function MeetingOrchestrator({
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [meetingError, setMeetingError] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState(currentUser.name);
 
-  // Real-time meeting with Supabase Presence (no fake participants)
-  const realtimeMeeting = useRealtimeMeeting({
+  // Real-time meeting with WebRTC for actual audio/video streaming
+  const realtimeMeeting = useRealtimeMeetingWebRTC({
     meetingId: meeting.id,
     userId: currentUser.id,
-    userName: currentUser.name,
+    userName: displayName,
     isHost: currentUser.isHost,
     onMeetingJoined: () => {
-      console.log("Successfully joined real-time meeting");
+      console.log("Successfully joined real-time meeting with WebRTC");
       setPhase("live");
       setMeetingError(null);
     },
@@ -70,9 +71,10 @@ export function MeetingOrchestrator({
     participants: realtimeMeeting.participants,
   });
 
-  const handleJoinMeeting = useCallback(async (audio: boolean, video: boolean) => {
+  const handleJoinMeeting = useCallback(async (audio: boolean, video: boolean, name: string) => {
     setAudioEnabled(audio);
     setVideoEnabled(video);
+    setDisplayName(name);
     setMeetingError(null);
     await realtimeMeeting.joinMeeting();
   }, [realtimeMeeting]);
