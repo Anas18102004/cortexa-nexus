@@ -1,346 +1,273 @@
 
-# Cortexa Meet: Complete Feature Implementation Plan
+# Elite Design System Overhaul: Beautiful Themes & Micro-Interactions
 
-## Current State Analysis
-
-After thorough exploration of the codebase, the meeting system has a solid foundation with:
-
-**Already Implemented:**
-- Local WebRTC video/audio using native `getUserMedia`
-- Pre-join lobby with camera/mic preview
-- Real-time speaking detection via AudioContext analysis
-- Grid and speaker view layouts
-- In-meeting chat with emoji reactions
-- AI assistant with transcript analysis
-- Push-to-talk mode
-- Theme toggle (dark/light)
-- Basic invite modal with link copying
-- Role-aware participant cards
-- Simulated participants for demo mode
-
-**Missing or Incomplete Features:**
-1. Screen sharing (stubbed with console.log only)
-2. Waiting room / host approval flow
-3. Raise hand synchronization
-4. Recording functionality
-5. Host controls (mute others, remove participant)
-6. Auto-hide controls on idle
-7. Network quality indicator integration
-8. Spotlight view layout
-9. Join/leave toast notifications
-10. System messages in chat
+## Vision
+Transform the meeting app into a world-class, award-worthy experience with two stunning themes and buttery-smooth animations. The goal: "This looks like it was designed by Apple's best team."
 
 ---
 
-## Implementation Plan
+## Part 1: Theme Redesign - Two Distinct Premium Experiences
 
-### Phase 1: Screen Sharing (Critical Feature)
+### Dark Mode - "Obsidian Night" 
+A cinematic, immersive experience with depth and sophistication.
 
-Implement real screen sharing using `getDisplayMedia` API in the local meeting hook.
-
-**Files to modify:**
-- `src/hooks/useLocalMeeting.ts` - Add screen share state and `getDisplayMedia` logic
-- `src/components/meeting/LiveMeetingRoomLocal.tsx` - Display screen share in main video area
-- `src/components/meeting/MeetingControlsReal.tsx` - Add stop share button and active indicator
-
-**Technical approach:**
+**Color Palette Refinement:**
 ```text
-+------------------+     getDisplayMedia     +-------------------+
-|  Screen Share    | ----------------------> |  screenStream     |
-|  Button Click    |                         |  (MediaStream)    |
-+------------------+                         +-------------------+
-                                                      |
-                                                      v
-                                            +-------------------+
-                                            |  Display in main  |
-                                            |  video area with  |
-                                            |  "Sharing" badge  |
-                                            +-------------------+
+Background:     Deep charcoal with blue undertone (not pure black)
+Surfaces:       Subtle elevation with transparency layers
+Primary:        Vibrant emerald (#10B981) with luminous glow
+Secondary:      Rich violet (#8B5CF6) for accents
+Borders:        Ultra-subtle with gradient shimmer
+Text:           Warm off-white for reduced eye strain
 ```
 
-### Phase 2: Auto-Hide Controls on Idle
+**Key Visual Elements:**
+- Floating surfaces with subtle inner glow
+- Gradient borders that shimmer on hover
+- Deep shadows with color-tinted ambient occlusion
+- Aurora-inspired accent gradients in backgrounds
 
-Implement idle detection to fade out controls bar after inactivity.
+### Light Mode - "Morning Mist"
+A warm, sophisticated editorial feel - like premium paper and ink.
 
-**Files to create/modify:**
-- `src/hooks/useIdleDetection.ts` (new) - Track mouse/keyboard activity
-- `src/components/meeting/FloatingControls.tsx` (new) - Wrapper with fade animation
-- `src/components/meeting/LiveMeetingRoomLocal.tsx` - Integrate idle detection
-
-**Technical approach:**
-- Track `mousemove`, `keydown`, `click` events
-- Set controls opacity to 0 after 4 seconds of idle
-- Show on any user activity with smooth fade transition
-- Always visible when PTT mode active or sharing screen
-
-### Phase 3: Host Controls
-
-Implement host moderation capabilities.
-
-**Files to modify:**
-- `src/hooks/useLocalMeeting.ts` - Add `muteParticipant`, `removeParticipant` functions
-- `src/components/meeting/ParticipantCard.tsx` - Add action buttons for host
-- `src/components/meeting/ParticipantsList.tsx` - Connect host actions
-
-**Features:**
-- "Mute" button on each participant card (host only)
-- "Remove from meeting" with confirmation dialog
-- "Mute All" button in participants header
-- Visual feedback when host mutes someone
-
-### Phase 4: Raise Hand with Sync
-
-Make raise hand visible to all participants with proper ordering.
-
-**Files to modify:**
-- `src/hooks/useLocalMeeting.ts` - Add `raisedHands` state and `toggleRaiseHand`
-- `src/types/meeting.ts` - Extend LocalParticipant with `isHandRaised`
-- `src/components/meeting/ParticipantCard.tsx` - Show hand icon when raised
-- `src/components/meeting/LiveMeetingRoomLocal.tsx` - Add control and visual queue
-
-**UI behavior:**
-- Hand icon appears on participant tile and card
-- Participants with raised hands bubble to top of list
-- Toast notification when someone raises hand
-- Host can "lower all hands" with one click
-
-### Phase 5: Waiting Room
-
-Implement host approval flow for joining.
-
-**Files to create:**
-- `src/components/meeting/WaitingRoom.tsx` (new) - Waiting state UI
-- `src/components/meeting/HostAdmitPanel.tsx` (new) - Host sees waiting participants
-
-**Files to modify:**
-- `src/hooks/useLocalMeeting.ts` - Add `waitingParticipants` state
-- `src/components/meeting/MeetingOrchestrator.tsx` - Add "waiting" phase
-
-**Flow:**
+**Color Palette Refinement:**
 ```text
-Participant clicks Join
-        |
-        v
-+-------------------+     Host has waiting room ON?     +------------------+
-|  Pre-join Lobby   | --------------------------------> |  Waiting Room    |
-+-------------------+              YES                  |  "Please wait"   |
-        |                                               +------------------+
-        | NO                                                    |
-        v                                                       v
-+-------------------+                                   +------------------+
-|  Live Meeting     | <-------------------------------- |  Host admits     |
-+-------------------+                                   +------------------+
+Background:     Warm ivory/cream (not harsh white)
+Surfaces:       Pure white with warm shadows
+Primary:        Deep teal (#0D9488) for authority
+Secondary:      Muted purple (#7C3AED) for elegance
+Borders:        Soft warm gray with depth
+Text:           Rich charcoal (not pure black) for readability
 ```
 
-### Phase 6: Recording (Local)
-
-Implement browser-based recording using MediaRecorder API.
-
-**Files to create:**
-- `src/hooks/useLocalRecording.ts` (new) - MediaRecorder logic
-
-**Files to modify:**
-- `src/components/meeting/LiveMeetingRoomLocal.tsx` - Add recording controls
-- `src/components/meeting/MeetingControlsReal.tsx` - Recording button with indicator
-
-**Features:**
-- Record to WebM format
-- Red pulsing indicator visible to all
-- Auto-download on stop
-- Permission indicator for participants
-
-### Phase 7: Spotlight View
-
-Add third layout mode for pinning a specific participant.
-
-**Files to modify:**
-- `src/components/meeting/LiveMeetingRoomLocal.tsx` - Add spotlight layout logic
-- `src/components/meeting/MeetingControlsReal.tsx` - Add spotlight button
-- `src/components/meeting/ParticipantCard.tsx` - Add "Pin/Spotlight" action
-
-**Behavior:**
-- Click on participant to spotlight them
-- They stay large even when not speaking
-- Small "Exit spotlight" button to return to speaker view
-
-### Phase 8: Chat Enhancements
-
-Add system messages and join/leave notifications.
-
-**Files to modify:**
-- `src/hooks/useMeetingChat.ts` - Add system message support
-- `src/components/meeting/ChatPanel.tsx` - Style system messages differently
-- `src/hooks/useLocalMeeting.ts` - Emit join/leave events
-
-**System messages include:**
-- "Jordan Lee joined the meeting"
-- "Alex Rivera left the meeting"  
-- "Recording started"
-- "Screen sharing started by You"
-
-### Phase 9: Network Quality Display
-
-Integrate the existing NetworkQuality component into the live meeting.
-
-**Files to modify:**
-- `src/hooks/useLocalMeeting.ts` - Add network quality monitoring
-- `src/components/meeting/LiveMeetingRoomLocal.tsx` - Display in top bar
-
-**Technical approach:**
-- Monitor RTT using `performance.now()` timing
-- Check frame drops on video track
-- Display green/yellow/red indicator
-- Show tooltip with "Connection: Good/Fair/Poor"
-
-### Phase 10: Final Polish
-
-**Join/Leave animations:**
-- Soft scale-in animation when participant joins
-- Fade-out when leaving
-- Toast notification with participant name
-
-**Micro-interactions:**
-- Button hover scales (1.02x)
-- Active speaker gentle border pulse
-- Smooth layout transitions with spring physics
+**Key Visual Elements:**
+- Soft paper-like texture overlays
+- Warm shadows that feel natural
+- Subtle gradient accents without harshness
+- Clean, breathable spacing
 
 ---
 
-## Technical Details
+## Part 2: Smooth Page Transitions
 
-### Screen Share Implementation
+### Meeting Phase Transitions
+Create cinematic transitions between lobby, live meeting, and summary screens.
 
-```typescript
-// In useLocalMeeting.ts
-const startScreenShare = useCallback(async () => {
-  try {
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { cursor: "always" },
-      audio: true
-    });
-    
-    screenStreamRef.current = screenStream;
-    setIsScreenSharing(true);
-    
-    // Handle user stopping share via browser UI
-    screenStream.getVideoTracks()[0].onended = () => {
-      stopScreenShare();
-    };
-  } catch (err) {
-    // User cancelled or permission denied
-    console.log("Screen share cancelled");
-  }
-}, []);
+**Transition System:**
+```text
+Lobby -> Live:     Scale down + fade, new screen slides up with spring physics
+Live -> Summary:   Blur + dim, summary card rises from center
+Error State:       Gentle shake + slide in from side
 ```
 
-### Idle Detection Hook
+**Implementation:**
+- Create `PageTransition` wrapper component with AnimatePresence
+- Use Framer Motion's `layout` and `layoutId` for shared elements
+- Implement custom spring physics: `{ type: "spring", stiffness: 300, damping: 30 }`
 
-```typescript
-// useIdleDetection.ts
-export function useIdleDetection(timeout = 4000) {
-  const [isIdle, setIsIdle] = useState(false);
-  
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    
-    const resetTimer = () => {
-      setIsIdle(false);
-      clearTimeout(timer);
-      timer = setTimeout(() => setIsIdle(true), timeout);
-    };
-    
-    window.addEventListener('mousemove', resetTimer);
-    window.addEventListener('keydown', resetTimer);
-    window.addEventListener('click', resetTimer);
-    
-    resetTimer();
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('mousemove', resetTimer);
-      window.removeEventListener('keydown', resetTimer);
-      window.removeEventListener('click', resetTimer);
-    };
-  }, [timeout]);
-  
-  return isIdle;
-}
-```
-
-### Recording Implementation
-
-```typescript
-// useLocalRecording.ts
-export function useLocalRecording(stream: MediaStream | null) {
-  const [isRecording, setIsRecording] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  
-  const startRecording = useCallback(() => {
-    if (!stream) return;
-    
-    const recorder = new MediaRecorder(stream, {
-      mimeType: 'video/webm;codecs=vp9'
-    });
-    
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data);
-    };
-    
-    recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      // Auto-download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `meeting-${Date.now()}.webm`;
-      a.click();
-    };
-    
-    mediaRecorderRef.current = recorder;
-    recorder.start(1000); // Capture every second
-    setIsRecording(true);
-  }, [stream]);
-  
-  return { isRecording, startRecording, stopRecording };
-}
+### Component-Level Transitions
+```text
+Side Panels:       Slide in from right with backdrop blur increasing
+Modals:            Scale from 0.95 + fade + backdrop
+Tooltips:          Fade up with micro-bounce
+Dropdowns:         Scale from anchor point + slide
 ```
 
 ---
 
-## File Summary
+## Part 3: Micro-Interactions for Every Element
 
-### New Files to Create:
-1. `src/hooks/useIdleDetection.ts` - Mouse/keyboard idle tracking
-2. `src/hooks/useLocalRecording.ts` - MediaRecorder wrapper
-3. `src/components/meeting/FloatingControls.tsx` - Auto-hide controls wrapper
-4. `src/components/meeting/WaitingRoom.tsx` - Waiting room UI
-5. `src/components/meeting/HostAdmitPanel.tsx` - Host admission controls
+### Button Interactions
+```text
+Hover:       Scale 1.02 + glow intensifies + background shifts
+Press:       Scale 0.98 + glow dims + haptic feedback feel
+Focus:       Ring animation that pulses once
+Disabled:    Reduced opacity with no transitions
+```
 
-### Files to Modify:
-1. `src/hooks/useLocalMeeting.ts` - Screen share, host controls, raise hand, network quality
-2. `src/components/meeting/LiveMeetingRoomLocal.tsx` - All new features integration
-3. `src/components/meeting/MeetingControlsReal.tsx` - New control buttons
-4. `src/components/meeting/ParticipantCard.tsx` - Host actions, raise hand icon
-5. `src/components/meeting/ParticipantsList.tsx` - Mute all, raise hand sorting
-6. `src/components/meeting/ChatPanel.tsx` - System messages
-7. `src/hooks/useMeetingChat.ts` - System message support
-8. `src/components/meeting/MeetingOrchestrator.tsx` - Waiting room phase
-9. `src/types/meeting.ts` - Extended participant types
+### Video Tile Interactions
+```text
+Speaking:    Gentle border pulse (2px -> 4px -> 2px) with glow
+Hover:       Lift (translateY -2px) + shadow grows + name fades in
+Muted:       Subtle desaturation + mute icon bounce on toggle
+Hand Raised: Bouncing hand icon with particle-like glow
+```
+
+### Control Bar Interactions
+```text
+Idle Fade:         Smooth 0.3s fade with translateY +20px
+Hover Return:      Instant response with spring physics
+Button Groups:     Shared hover highlight that slides between buttons
+Active States:     Glowing ring that breathes slowly
+```
+
+### Chat & Panel Interactions
+```text
+New Message:       Slide in from right + subtle bounce
+Reaction Add:      Pop animation + floating emoji particle
+Typing:            Pulsing dots with wave pattern
+Scroll:            Momentum with subtle rubber-band
+```
 
 ---
 
-## Priority Order
+## Part 4: Files to Create/Modify
 
-1. **Screen Sharing** - Most requested feature gap
-2. **Auto-Hide Controls** - Critical for "calm" UX
-3. **Host Controls** - Required for real meetings
-4. **Raise Hand** - Basic meeting etiquette
-5. **Recording** - Common expectation
-6. **Chat System Messages** - Polished experience
-7. **Waiting Room** - Security feature
-8. **Spotlight View** - Advanced layout
-9. **Network Quality** - Technical polish
-10. **Final Animations** - Premium feel
+### New Files
 
-This plan delivers 100% Zoom/Meet/Teams parity with a dramatically superior, calm, and intelligent user experience.
+**1. `src/components/ui/page-transition.tsx`**
+Reusable transition wrapper for all page-level animations.
+
+**2. `src/components/meeting/AnimatedParticipantGrid.tsx`**  
+Grid that uses `layoutId` for smooth participant add/remove animations.
+
+### Modified Files
+
+**1. `src/index.css` - Complete Theme Overhaul**
+- Refined HSL color values for both themes
+- New CSS custom properties for shadows and glows
+- Enhanced animation keyframes library
+- Improved glass-morphism effects
+- Better contrast ratios for accessibility
+
+**2. `tailwind.config.ts` - Extended Animation System**
+- New keyframes: `float-up`, `glow-pulse`, `slide-in`, `pop`, `rubber-band`
+- Extended timing functions for natural physics
+- New shadow utilities with colored ambient light
+- Gradient backdrop utilities
+
+**3. `src/components/ui/button.tsx` - Enhanced Interactions**
+- Add hover glow scaling
+- Improved press feedback
+- Refined focus states with animated rings
+- Variant-specific micro-animations
+
+**4. `src/components/ui/input.tsx` - Polished Focus States**
+- Animated border on focus
+- Subtle glow effect
+- Placeholder transition on focus
+
+**5. `src/components/ui/card.tsx` - Premium Cards**
+- Hover lift with shadow growth
+- Subtle border gradient on hover
+- Inner glow for depth
+
+**6. `src/components/meeting/MeetingOrchestrator.tsx` - Phase Transitions**
+- Wrap phases in AnimatePresence with mode="wait"
+- Add exit/enter animations for each phase
+- Implement shared element transitions for continuity
+
+**7. `src/components/meeting/PreJoinLobbyReal.tsx` - Entrance Polish**
+- Staggered element entry animations
+- Video preview with subtle breathing animation
+- Button pulse on ready state
+- Enhanced glassmorphism
+
+**8. `src/components/meeting/LiveMeetingRoomLocal.tsx` - Live Interactions**
+- Control bar with smooth idle detection fade
+- Participant grid with layout animations
+- Panel slide-in/out with spring physics
+
+**9. `src/components/meeting/ParticipantCard.tsx` - Card Micro-interactions**
+- Enhanced speaking indicator animation
+- Hover state with lift and glow
+- Role badge animations
+
+**10. `src/components/meeting/MeetingControlsReal.tsx` - Control Polish**
+- Button hover glow effects
+- Active state breathing animation
+- Tooltip entrance micro-bounce
+
+**11. `src/components/meeting/AmbientBackground.tsx` - Enhanced Atmospherics**
+- Theme-aware gradient intensities
+- Smoother floating animations
+- Added subtle shimmer effect
+
+**12. `src/components/theme/ThemeToggle.tsx` - Delightful Toggle**
+- Sun/moon icon morph animation
+- Background color cross-fade
+- Ripple effect on change
+
+**13. `src/components/meeting/PostMeetingSummary.tsx` - Celebration Entrance**
+- Confetti-like particle entrance (subtle)
+- Staggered card reveals
+- Stats counter animation
+
+**14. `src/components/meeting/ChatPanel.tsx` - Chat Animations**
+- Message slide-in from right
+- Reaction pop animation
+- Typing indicator pulse
+
+---
+
+## Part 5: Specific Animation Tokens
+
+### Timing Functions (easing curves)
+```css
+--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+--ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+--ease-spring: cubic-bezier(0.43, 0.195, 0.02, 1);
+--ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+```
+
+### Duration Standards
+```text
+Micro (tooltips, hovers):     100-150ms
+Standard (buttons, toggles):  200-250ms
+Emphasized (modals, panels):  300-400ms
+Page Transitions:             400-600ms
+```
+
+### Keyframe Library
+```text
+fade-in-up:       opacity 0->1, translateY 10px->0
+scale-in:         scale 0.95->1, opacity 0->1
+slide-in-right:   translateX 100%->0, opacity 0->1
+glow-pulse:       box-shadow intensity cycles
+pop:              scale 1->1.15->1 with bounce
+shake:            translateX oscillation for errors
+breathe:          scale 1->1.02->1 for active states
+```
+
+---
+
+## Part 6: Theme Color Tokens (Refined)
+
+### Dark Theme - "Obsidian Night"
+```css
+--background: 222 47% 6%;           /* Deep blue-black */
+--foreground: 210 20% 95%;          /* Warm off-white */
+--card: 222 40% 9%;                 /* Elevated surface */
+--primary: 160 84% 45%;             /* Emerald glow */
+--secondary: 258 90% 66%;           /* Rich violet */
+--muted: 222 30% 15%;               /* Subtle slate */
+--accent: 186 100% 50%;             /* Electric cyan */
+--border: 222 25% 18%;              /* Soft edge */
+```
+
+### Light Theme - "Morning Mist"  
+```css
+--background: 40 30% 97%;           /* Warm ivory */
+--foreground: 222 47% 11%;          /* Rich charcoal */
+--card: 0 0% 100%;                  /* Pure white */
+--primary: 168 80% 36%;             /* Deep teal */
+--secondary: 258 58% 52%;           /* Muted violet */
+--muted: 40 15% 92%;                /* Warm gray */
+--accent: 186 60% 40%;              /* Ocean blue */
+--border: 40 10% 86%;               /* Soft warm edge */
+```
+
+---
+
+## Implementation Priority
+
+1. **Theme Colors** - Foundation for everything else
+2. **CSS Animations** - Global animation library  
+3. **Button/Input Polish** - Most-used components
+4. **Page Transitions** - High-impact visual improvement
+5. **Participant Cards** - Core meeting experience
+6. **Control Bar** - Key interaction point
+7. **Panels & Chat** - Supporting features
+8. **Final Polish** - Ambient backgrounds, loading states
+
+This comprehensive overhaul will transform the meeting app into a truly premium experience that feels delightful in both light and dark modes, with animations that feel natural and intentional rather than gratuitous.
