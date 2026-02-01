@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useMediaDevices } from "@/hooks/useMediaDevices";
 import { Participant } from "@/types/meeting";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { 
   Mic, 
   MicOff, 
@@ -74,7 +75,12 @@ export function PreJoinLobby({
   };
 
   return (
-    <div className={cn("min-h-screen bg-background flex", className)}>
+    <div className={cn("min-h-screen bg-background flex relative", className)}>
+      {/* Theme Toggle in top right */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+
       {/* Left Side - Video Preview */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-2xl space-y-6">

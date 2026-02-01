@@ -2,10 +2,10 @@ import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Meeting, Participant, MeetingState } from "@/types/meeting";
 import { PreJoinLobby } from "./PreJoinLobbyReal";
-import { LiveMeetingRoom } from "./LiveMeetingRoom";
+import { LiveMeetingRoomLocal } from "./LiveMeetingRoomLocal";
 import { PostMeetingSummary } from "./PostMeetingSummary";
 import { MeetingErrorState } from "./MeetingStates";
-import { useDailyMeeting } from "@/hooks/useDailyMeeting";
+import { useLocalMeeting } from "@/hooks/useLocalMeeting";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 
 type MeetingPhase = "lobby" | "live" | "ended" | "error";
@@ -26,8 +26,8 @@ export function MeetingOrchestrator({
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [meetingError, setMeetingError] = useState<string | null>(null);
 
-  // Daily.co meeting integration
-  const dailyMeeting = useDailyMeeting({
+  // Local meeting integration (no external provider needed)
+  const localMeeting = useLocalMeeting({
     meetingId: meeting.id,
     userId: currentUser.id,
     userName: currentUser.name,
@@ -48,13 +48,10 @@ export function MeetingOrchestrator({
       console.error("Meeting error:", err);
       const errorMessage = err.message || "Failed to join meeting";
       
-      // Check for specific Daily.co errors
-      if (errorMessage.includes("account-missing-payment-method")) {
-        setMeetingError("Daily.co account requires a payment method. Please configure billing in your Daily.co dashboard or use a different video provider.");
-      } else if (errorMessage.includes("exp-room")) {
-        setMeetingError("This meeting room has expired. Please create a new meeting.");
-      } else if (errorMessage.includes("nbf-room")) {
-        setMeetingError("This meeting has not started yet. Please wait for the host.");
+      if (errorMessage.includes("Permission denied") || errorMessage.includes("NotAllowedError")) {
+        setMeetingError("Camera and microphone access is required. Please allow access in your browser and try again.");
+      } else if (errorMessage.includes("NotFoundError")) {
+        setMeetingError("No camera or microphone found. Please connect a device and try again.");
       } else {
         setMeetingError(errorMessage);
       }
@@ -65,20 +62,20 @@ export function MeetingOrchestrator({
   // AI assistant
   const meetingAI = useMeetingAI({
     isEnabled: phase === "live",
-    participants: dailyMeeting.participants,
+    participants: localMeeting.participants,
   });
 
   const handleJoinMeeting = useCallback(async (audio: boolean, video: boolean) => {
     setAudioEnabled(audio);
     setVideoEnabled(video);
     setMeetingError(null);
-    await dailyMeeting.joinMeeting();
-  }, [dailyMeeting]);
+    await localMeeting.joinMeeting();
+  }, [localMeeting]);
 
   const handleEndMeeting = useCallback(async () => {
-    await dailyMeeting.leaveMeeting();
+    await localMeeting.leaveMeeting();
     setPhase("ended");
-  }, [dailyMeeting]);
+  }, [localMeeting]);
 
   const handleRejoin = useCallback(() => {
     setPhase("lobby");
@@ -115,16 +112,17 @@ export function MeetingOrchestrator({
           meetingTitle={meeting.title}
           currentUser={currentUser}
           onJoinMeeting={handleJoinMeeting}
-          isJoining={dailyMeeting.isJoining}
+          isJoining={localMeeting.isJoining}
         />
       )}
 
       {phase === "live" && (
-        <LiveMeetingRoom
+        <LiveMeetingRoomLocal
           meeting={meeting}
           userId={currentUser.id}
           userName={currentUser.name}
           isHost={currentUser.isHost}
+          localMeeting={localMeeting}
           onEndMeeting={handleEndMeeting}
         />
       )}
@@ -146,3 +144,4 @@ export function MeetingOrchestrator({
     </div>
   );
 }
+
