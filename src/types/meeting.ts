@@ -46,7 +46,7 @@ export interface ActionItem {
 
 export interface AIInsight {
   id: string;
-  type: 'summary' | 'suggestion' | 'question' | 'risk' | 'decision';
+  type: 'summary' | 'suggestion' | 'question' | 'risk' | 'decision' | 'warning' | 'action';
   content: string;
   timestamp: Date;
   relevance: number; // 0-1
