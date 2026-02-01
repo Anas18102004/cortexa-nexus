@@ -129,8 +129,13 @@ export function LiveMeetingRoomLocal({
   // Chat hook
   const chat = useMeetingChat();
 
-  // Floating reactions hook
-  const floatingReactions = useFloatingReactions();
+  // Floating reactions hook - with current user info for avatars
+  const currentReactionUser = {
+    id: userId,
+    name: userName,
+    avatar: localParticipant?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`,
+  };
+  const floatingReactions = useFloatingReactions(currentReactionUser);
 
   // Attach local video stream
   useEffect(() => {
@@ -761,6 +766,8 @@ export function LiveMeetingRoomLocal({
           onSelectReaction={floatingReactions.addReaction}
           onBurstReaction={floatingReactions.addBurstReaction}
           availableEmojis={floatingReactions.availableEmojis}
+          soundEnabled={floatingReactions.soundEnabled}
+          onToggleSound={floatingReactions.toggleSound}
         />
 
         <MeetingControlsReal

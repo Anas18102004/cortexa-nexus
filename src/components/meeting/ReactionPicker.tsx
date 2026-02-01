@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Smile, ChevronUp } from "lucide-react";
+import { Smile, ChevronUp, Volume2, VolumeX } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +18,8 @@ interface ReactionPickerProps {
   onSelectReaction: (emoji: string) => void;
   onBurstReaction?: (emoji: string) => void;
   availableEmojis: string[];
+  soundEnabled?: boolean;
+  onToggleSound?: () => void;
   className?: string;
 }
 
@@ -27,6 +29,8 @@ export function ReactionPicker({
   onSelectReaction,
   onBurstReaction,
   availableEmojis,
+  soundEnabled = true,
+  onToggleSound,
   className,
 }: ReactionPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,6 +82,41 @@ export function ReactionPicker({
                 </Tooltip>
               </motion.div>
             ))}
+
+            {/* Sound Toggle */}
+            {onToggleSound && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ delay: quickEmojis.length * 0.05 }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.button
+                      className={cn(
+                        "w-8 h-8 flex items-center justify-center rounded-full transition-colors",
+                        soundEnabled 
+                          ? "bg-primary/20 text-primary" 
+                          : "bg-surface-2 text-muted-foreground"
+                      )}
+                      onClick={onToggleSound}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {soundEnabled ? (
+                        <Volume2 className="w-4 h-4" />
+                      ) : (
+                        <VolumeX className="w-4 h-4" />
+                      )}
+                    </motion.button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">{soundEnabled ? "Mute sounds" : "Enable sounds"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
