@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
-import { Sparkles, Brain, Mic, CheckCircle2 } from "lucide-react";
+import { Brain, Mic, CheckCircle2 } from "lucide-react";
+import novaAiLogo from "@/assets/nova-ai-logo.png";
 
 interface AIParticipantCardProps {
   isListening?: boolean;
@@ -25,15 +26,15 @@ export function AIParticipantCard({
       {/* AI Avatar */}
       <div className="flex items-start gap-3">
         <div className={cn(
-          "w-12 h-12 rounded-xl bg-gradient-to-br from-aurora-teal to-aurora-violet flex items-center justify-center shrink-0",
+          "w-12 h-12 rounded-xl overflow-hidden shrink-0",
           (isListening || isProcessing) && "ai-pulse"
         )}>
-          <Sparkles className="w-6 h-6 text-background" />
+          <img src={novaAiLogo} alt="Nova AI" className="w-full h-full object-cover" />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground">Cortexa AI</span>
+            <span className="font-medium text-foreground">Nova AI</span>
             <span className="px-1.5 py-0.5 rounded-full bg-aurora-teal/20 text-aurora-teal text-[10px]">
               AI
             </span>

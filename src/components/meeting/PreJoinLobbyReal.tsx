@@ -12,9 +12,12 @@ import {
   Sparkles,
   ChevronDown,
   Volume2,
-  CheckCircle2
+  CheckCircle2,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,11 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import novaAiLogo from "@/assets/nova-ai-logo.png";
 
 interface PreJoinLobbyProps {
   meetingTitle: string;
   currentUser: Participant;
-  onJoinMeeting: (audioEnabled: boolean, videoEnabled: boolean) => void;
+  onJoinMeeting: (audioEnabled: boolean, videoEnabled: boolean, displayName: string) => void;
   isJoining?: boolean;
   className?: string;
 }
@@ -40,6 +44,7 @@ export function PreJoinLobby({
 }: PreJoinLobbyProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [displayName, setDisplayName] = useState(currentUser.name);
   
   const {
     hasPermissions,
@@ -71,8 +76,11 @@ export function PreJoinLobby({
   }, [localStream]);
 
   const handleJoin = () => {
-    onJoinMeeting(isAudioEnabled, isVideoEnabled);
+    const nameToUse = displayName.trim() || currentUser.name;
+    onJoinMeeting(isAudioEnabled, isVideoEnabled, nameToUse);
   };
+
+  const isNameValid = displayName.trim().length >= 2;
 
   return (
     <div className={cn("min-h-screen bg-background flex relative", className)}>
@@ -98,7 +106,7 @@ export function PreJoinLobby({
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-surface-1 to-surface-2">
                 <div className="w-24 h-24 rounded-full bg-surface-3 flex items-center justify-center">
                   <span className="text-3xl font-semibold text-foreground">
-                    {currentUser.name.charAt(0)}
+                    {displayName.charAt(0).toUpperCase() || currentUser.name.charAt(0)}
                   </span>
                 </div>
               </div>
@@ -120,7 +128,7 @@ export function PreJoinLobby({
             {/* Name Badge */}
             <div className="absolute bottom-4 right-4 glass-panel rounded-xl px-4 py-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{currentUser.name}</span>
+                <span className="text-sm font-medium text-foreground">{displayName || currentUser.name}</span>
                 <span className="text-xs text-muted-foreground">{currentUser.role.title}</span>
               </div>
             </div>
@@ -162,6 +170,28 @@ export function PreJoinLobby({
             >
               <Settings2 className="w-5 h-5" />
             </Button>
+          </div>
+
+          {/* Name Input */}
+          <div className="glass-panel rounded-xl p-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName" className="text-sm text-muted-foreground flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Your display name
+              </Label>
+              <Input
+                id="displayName"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Enter your name"
+                className="bg-surface-2 border-border/50"
+                maxLength={30}
+              />
+              {!isNameValid && displayName.length > 0 && (
+                <p className="text-xs text-muted-foreground">Name must be at least 2 characters</p>
+              )}
+            </div>
           </div>
 
           {/* Settings Dropdown */}
@@ -241,11 +271,11 @@ export function PreJoinLobby({
           {/* AI Presence */}
           <div className="glass-panel rounded-xl p-4 border-l-2 border-l-primary">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-aurora-teal to-aurora-violet flex items-center justify-center ai-pulse">
-                <Sparkles className="w-5 h-5 text-background" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden ai-pulse">
+                <img src={novaAiLogo} alt="Nova AI" className="w-full h-full object-cover" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Cortexa AI</p>
+                <p className="font-medium text-foreground">Nova AI</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Will join to assist with notes, decisions, and action items
                 </p>
@@ -273,7 +303,7 @@ export function PreJoinLobby({
           {/* Join Button */}
           <Button
             onClick={handleJoin}
-            disabled={isJoining || hasPermissions === false}
+            disabled={isJoining || hasPermissions === false || !isNameValid}
             className="w-full h-12 text-base font-medium bg-gradient-to-r from-primary to-aurora-cyan hover:opacity-90 transition-opacity"
           >
             {isJoining ? (

@@ -153,7 +153,7 @@ export function ParticipantsList({
                     <Sparkles className="w-5 h-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">Cortexa AI</p>
+                    <p className="text-sm font-medium text-foreground">Nova AI</p>
                     <p className="text-xs text-primary">Listening & analyzing</p>
                   </div>
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
