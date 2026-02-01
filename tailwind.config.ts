@@ -81,14 +81,15 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'glow-sm': '0 0 20px hsl(var(--aurora-teal) / 0.1)',
-        'glow-md': '0 0 40px hsl(var(--aurora-teal) / 0.15)',
-        'glow-lg': '0 0 60px hsl(var(--aurora-teal) / 0.2)',
-        'glow-violet': '0 0 40px hsl(var(--aurora-violet) / 0.15)',
-        'inner-glow': 'inset 0 1px 0 hsl(var(--foreground) / 0.05)',
-        'elevation-1': '0 1px 3px hsl(var(--background) / 0.5), 0 1px 2px hsl(var(--background) / 0.3)',
-        'elevation-2': '0 4px 6px hsl(var(--background) / 0.5), 0 2px 4px hsl(var(--background) / 0.3)',
-        'elevation-3': '0 10px 15px hsl(var(--background) / 0.5), 0 4px 6px hsl(var(--background) / 0.3)',
+        'glow-sm': '0 0 15px hsl(var(--aurora-teal) / 0.15)',
+        'glow-md': '0 0 30px hsl(var(--aurora-teal) / 0.2)',
+        'glow-lg': '0 0 50px hsl(var(--aurora-teal) / 0.25)',
+        'glow-violet': '0 0 30px hsl(var(--aurora-violet) / 0.2)',
+        'inner-glow': 'inset 0 1px 0 hsl(var(--foreground) / 0.06)',
+        'elevation-1': '0 2px 8px hsl(var(--background) / 0.08), 0 1px 2px hsl(var(--background) / 0.06)',
+        'elevation-2': '0 4px 16px hsl(var(--background) / 0.1), 0 2px 4px hsl(var(--background) / 0.06)',
+        'elevation-3': '0 8px 32px hsl(var(--background) / 0.12), 0 4px 8px hsl(var(--background) / 0.08)',
+        'premium': '0 4px 24px hsl(var(--primary) / 0.1), 0 12px 48px hsl(var(--background) / 0.15)',
       },
       keyframes: {
         "accordion-down": {
