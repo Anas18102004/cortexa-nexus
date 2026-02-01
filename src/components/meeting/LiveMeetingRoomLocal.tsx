@@ -6,6 +6,7 @@ import { useLiveTranscription } from "@/hooks/useLiveTranscription";
 import { usePushToTalk } from "@/hooks/usePushToTalk";
 import { useIdleDetection } from "@/hooks/useIdleDetection";
 import { useLocalRecording } from "@/hooks/useLocalRecording";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { AIParticipantCard } from "./AIParticipantCard";
 import { MeetingControlsReal } from "./MeetingControlsReal";
 import { FloatingControls } from "./FloatingControls";
@@ -35,10 +36,16 @@ import {
   Radio,
   MonitorOff,
   Pin,
-  PinOff
+  PinOff,
+  Keyboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface LiveMeetingRoomLocalProps {
   meeting: Meeting;
@@ -238,6 +245,19 @@ export function LiveMeetingRoomLocal({
   // Force controls visible when screen sharing, recording, or PTT active
   const forceControlsVisible = isScreenSharing || recording.isRecording || pushToTalk.isPTTMode;
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onToggleMute: toggleMicrophone,
+    onToggleVideo: toggleCamera,
+    onToggleScreenShare: isScreenSharing ? stopScreenShare : startScreenShare,
+    onToggleRaiseHand: toggleRaiseHand,
+    onToggleAI: () => setIsAIEnabled(!isAIEnabled),
+    onToggleRecording: recording.isRecording ? recording.stopRecording : handleStartRecording,
+    onToggleChat: () => togglePanel("chat"),
+    onToggleParticipants: () => togglePanel("participants"),
+    onEndCall: handleEndCall,
+  });
+
   return (
     <div className={cn("h-screen bg-background flex flex-col overflow-hidden relative", className)}>
       {/* Ambient Background */}
@@ -388,6 +408,38 @@ export function LiveMeetingRoomLocal({
             >
               <Radio className="w-4 h-4" />
             </Button>
+
+            {/* Keyboard Shortcuts Hint */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="iconSm">
+                  <Keyboard className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end" className="max-w-xs">
+                <div className="space-y-1 text-xs">
+                  <p className="font-medium mb-2">Keyboard Shortcuts</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    <span className="text-muted-foreground">M</span>
+                    <span>Toggle mute</span>
+                    <span className="text-muted-foreground">V</span>
+                    <span>Toggle video</span>
+                    <span className="text-muted-foreground">S</span>
+                    <span>Screen share</span>
+                    <span className="text-muted-foreground">H</span>
+                    <span>Raise hand</span>
+                    <span className="text-muted-foreground">R</span>
+                    <span>Recording</span>
+                    <span className="text-muted-foreground">C</span>
+                    <span>Toggle chat</span>
+                    <span className="text-muted-foreground">P</span>
+                    <span>Participants</span>
+                    <span className="text-muted-foreground">Space</span>
+                    <span>Push-to-talk</span>
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
