@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { MeetingState, Participant, AIMode } from "@/types/meeting";
+import { MeetingState, Participant, AIMode, MeetingUIMode } from "@/types/meeting";
 import { SpeakerView } from "./SpeakerView";
 import { MeetingControls } from "./MeetingControls";
 import { AIAgent } from "./AIAgent";
@@ -12,8 +12,21 @@ import { FileSharing } from "./FileSharing";
 import { useMeetingChat } from "@/hooks/useMeetingChat";
 import { useBreakoutRooms } from "@/hooks/useBreakoutRooms";
 import { useWhiteboard } from "@/hooks/useWhiteboard";
+import { useMeetingUIMode } from "@/hooks/useMeetingUIMode";
 import { useState } from "react";
-import { Clock, MessageSquare, Users, PenTool, Paperclip } from "lucide-react";
+import { 
+  Clock, 
+  MessageSquare, 
+  Users, 
+  PenTool, 
+  Paperclip,
+  ListChecks,
+  Target,
+  X,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LiveMeetingProps {
@@ -23,7 +36,7 @@ interface LiveMeetingProps {
   className?: string;
 }
 
-type SidePanel = "none" | "chat" | "breakout" | "whiteboard" | "files";
+type SidePanel = "none" | "chat" | "breakout" | "files";
 
 export function LiveMeeting({
   state,
@@ -44,6 +57,19 @@ export function LiveMeeting({
   const { messages, sendMessage, addReaction } = useMeetingChat();
   const { rooms, unassignedParticipants, createRoom, deleteRoom, assignParticipant } = useBreakoutRooms();
   const { annotations, addAnnotation, undo, clear } = useWhiteboard();
+  
+  // Progressive Intelligence Panels
+  const {
+    mode,
+    setMode,
+    isLeftPanelVisible,
+    isRightPanelVisible,
+    toggleLeftPanel,
+    toggleRightPanel,
+    aiMessage,
+    dismissAiMessage,
+    getModeLabel,
+  } = useMeetingUIMode({ state, elapsedTime: state.elapsedTime });
 
   const activeSpeaker = state.meeting.participants.find((p) => p.isSpeaking) || 
     state.meeting.participants[0];
@@ -73,14 +99,33 @@ export function LiveMeeting({
   }
 
   return (
-    <div className={cn("h-screen bg-background flex flex-col", className)}>
+    <div className={cn("h-screen bg-background flex flex-col overflow-hidden", className)}>
+      {/* AI Intelligence Toast */}
+      {aiMessage && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div className="flex items-center gap-3 px-4 py-3 bg-surface-1/95 backdrop-blur-lg border border-primary/20 rounded-2xl shadow-glow-sm">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-aurora-teal to-aurora-cyan flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-background" />
+            </div>
+            <p className="text-sm text-foreground max-w-md">{aiMessage.message}</p>
+            <Button variant="ghost" size="iconSm" onClick={dismissAiMessage}>
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Minimal Top Bar */}
-      <div className="h-12 bg-surface-0/80 backdrop-blur-sm flex items-center justify-between px-6 border-b border-border/50">
+      <div className="h-12 bg-surface-0/80 backdrop-blur-sm flex items-center justify-between px-6 border-b border-border/50 shrink-0">
         <div className="flex items-center gap-4">
           <h1 className="text-sm font-medium text-foreground">{state.meeting.title}</h1>
           <div className="flex items-center gap-1.5 text-xs text-aurora-rose">
             <div className="w-1.5 h-1.5 rounded-full bg-aurora-rose animate-pulse" />
             Live
+          </div>
+          {/* Mode Indicator */}
+          <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-2 text-xs text-muted-foreground">
+            {getModeLabel(mode)}
           </div>
         </div>
 
@@ -98,6 +143,26 @@ export function LiveMeeting({
               REC
             </div>
           )}
+
+          {/* Panel Toggle Controls */}
+          <div className="hidden lg:flex items-center gap-1 ml-2 border-l border-border/50 pl-3">
+            <Button
+              variant={isLeftPanelVisible ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={toggleLeftPanel}
+              title="Toggle Agenda"
+            >
+              <ListChecks className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={isRightPanelVisible ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={toggleRightPanel}
+              title="Toggle Decisions"
+            >
+              <Target className="w-4 h-4" />
+            </Button>
+          </div>
 
           {/* Quick Actions */}
           <div className="flex items-center gap-1 ml-2">
@@ -138,23 +203,40 @@ export function LiveMeeting({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
-        {/* Left Sidebar - Compact Agenda & AI */}
-        <div className="hidden lg:flex w-72 flex-col border-r border-border/50 bg-surface-0/50">
-          <div className="flex-1 overflow-y-auto p-4">
-            <AgendaTimeline
-              items={state.meeting.agenda}
-              currentIndex={state.currentAgendaIndex}
-              className="mb-6"
-            />
-            <AIAgent
-              mode={aiMode}
-              onModeChange={setAiMode}
-              insights={state.meeting.aiInsights}
-              isThinking={false}
-            />
-          </div>
+      <div className="flex-1 flex min-h-0 relative">
+        {/* Left Panel - Agenda (Progressive) */}
+        <div 
+          className={cn(
+            "hidden lg:flex flex-col border-r border-border/50 bg-surface-0/50 transition-all duration-500 ease-out overflow-hidden",
+            isLeftPanelVisible ? "w-72 opacity-100" : "w-0 opacity-0"
+          )}
+        >
+          {isLeftPanelVisible && (
+            <div className="flex-1 overflow-y-auto p-4 animate-fade-in">
+              <AgendaTimeline
+                items={state.meeting.agenda}
+                currentIndex={state.currentAgendaIndex}
+                className="mb-6"
+              />
+              <AIAgent
+                mode={aiMode}
+                onModeChange={setAiMode}
+                insights={state.meeting.aiInsights}
+                isThinking={false}
+              />
+            </div>
+          )}
         </div>
+
+        {/* Left Panel Toggle (when hidden) */}
+        {!isLeftPanelVisible && (
+          <button
+            onClick={toggleLeftPanel}
+            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 bg-surface-1/80 backdrop-blur-sm border border-border/50 rounded-r-lg items-center justify-center hover:bg-surface-2 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
+        )}
 
         {/* Center - Main View */}
         <div className="flex-1 flex flex-col p-4 min-w-0">
@@ -166,7 +248,7 @@ export function LiveMeeting({
 
           {/* Captions */}
           {isCaptionsOn && (
-            <div className="mt-3 bg-surface-1/80 backdrop-blur-sm rounded-xl p-3 text-center fade-in">
+            <div className="mt-3 bg-surface-1/80 backdrop-blur-sm rounded-xl p-3 text-center animate-fade-in">
               <p className="text-sm text-foreground">
                 <span className="text-primary font-medium">Sarah Chen: </span>
                 "I think we should prioritize the API integration before moving to the new dashboard..."
@@ -175,16 +257,19 @@ export function LiveMeeting({
           )}
         </div>
 
-        {/* Right Sidebar - Decisions or Dynamic Panel */}
-        {activePanel === "none" ? (
-          <div className="hidden lg:block w-72 border-l border-border/50 bg-surface-0/50 overflow-y-auto p-4">
-            <DecisionCapture
-              decisions={state.meeting.decisions}
-              actionItems={state.meeting.actionItems}
-            />
-          </div>
-        ) : (
-          <div className="w-80 border-l border-border/50 flex flex-col">
+        {/* Right Panel Toggle (when hidden) */}
+        {!isRightPanelVisible && activePanel === "none" && (
+          <button
+            onClick={toggleRightPanel}
+            className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 bg-surface-1/80 backdrop-blur-sm border border-border/50 rounded-l-lg items-center justify-center hover:bg-surface-2 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          </button>
+        )}
+
+        {/* Right Panel - Decisions or Dynamic Panel */}
+        {activePanel !== "none" ? (
+          <div className="w-80 border-l border-border/50 flex flex-col animate-slide-in-right">
             {activePanel === "chat" && (
               <ChatPanel
                 messages={messages}
@@ -207,11 +292,27 @@ export function LiveMeeting({
               <FileSharing onClose={() => setActivePanel("none")} />
             )}
           </div>
+        ) : (
+          <div 
+            className={cn(
+              "hidden lg:flex flex-col border-l border-border/50 bg-surface-0/50 transition-all duration-500 ease-out overflow-hidden",
+              isRightPanelVisible ? "w-72 opacity-100" : "w-0 opacity-0"
+            )}
+          >
+            {isRightPanelVisible && (
+              <div className="flex-1 overflow-y-auto p-4 animate-fade-in">
+                <DecisionCapture
+                  decisions={state.meeting.decisions}
+                  actionItems={state.meeting.actionItems}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Bottom Controls - Floating Style */}
-      <div className="py-4 flex items-center justify-center">
+      <div className="py-4 flex items-center justify-center shrink-0">
         <MeetingControls
           isMuted={isMuted}
           isVideoOn={isVideoOn}

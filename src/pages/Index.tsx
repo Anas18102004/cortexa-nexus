@@ -14,7 +14,11 @@ type MeetingPhase = "lobby" | "live" | "summary";
 const Index = () => {
   const [phase, setPhase] = useState<MeetingPhase>("lobby");
   const [currentUser, setCurrentUser] = useState<Participant>(initialUser);
-  const [meetingState, setMeetingState] = useState<MeetingState>(mockMeetingState);
+  const [meetingState, setMeetingState] = useState<MeetingState>({
+    ...mockMeetingState,
+    elapsedTime: 0,
+    uiMode: "focus",
+  });
   const [elapsedTime, setElapsedTime] = useState(0);
 
   // Timer for live meeting
