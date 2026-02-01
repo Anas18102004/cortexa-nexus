@@ -7,6 +7,8 @@ import { AIParticipantCard } from "./AIParticipantCard";
 import { MeetingControlsReal } from "./MeetingControlsReal";
 import { ChatPanel } from "./ChatPanel";
 import { DecisionCapture } from "./DecisionCapture";
+import { ParticipantsList } from "./ParticipantsList";
+import { InviteModal } from "./InviteModal";
 import { useMeetingChat } from "@/hooks/useMeetingChat";
 import { Meeting, Decision, ActionItem, AgendaItem } from "@/types/meeting";
 import { 
@@ -19,7 +21,9 @@ import {
   ChevronRight,
   LayoutGrid,
   User,
-  Maximize2
+  Maximize2,
+  Users,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -33,7 +37,7 @@ interface LiveMeetingRoomProps {
 }
 
 type LayoutMode = "grid" | "speaker" | "sidebar";
-type SidePanel = "none" | "chat" | "decisions";
+type SidePanel = "none" | "chat" | "decisions" | "participants";
 
 export function LiveMeetingRoom({
   meeting,
@@ -48,6 +52,7 @@ export function LiveMeetingRoom({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isAIEnabled, setIsAIEnabled] = useState(true);
   const [currentAgendaIndex, setCurrentAgendaIndex] = useState(0);
+  const [showInvite, setShowInvite] = useState(false);
 
   // Daily.co meeting hook
   const {
@@ -116,9 +121,34 @@ export function LiveMeetingRoom({
   const currentAgendaItem = meeting.agenda?.[currentAgendaIndex];
 
   return (
-    <div className={cn("h-screen bg-background flex flex-col overflow-hidden", className)}>
+    <div className={cn("h-screen bg-background flex flex-col overflow-hidden relative", className)}>
+      {/* Ambient Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div 
+          className="absolute -top-1/2 -left-1/4 w-[80%] h-[80%] rounded-full blur-[120px] bg-gradient-radial from-aurora-teal to-transparent opacity-[0.04]"
+          style={{ animation: "ambient-float-1 25s ease-in-out infinite" }}
+        />
+        <div 
+          className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[70%] rounded-full blur-[100px] bg-gradient-radial from-aurora-violet to-transparent opacity-[0.04]"
+          style={{ animation: "ambient-float-2 30s ease-in-out infinite" }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes ambient-float-1 {
+          0%, 100% { transform: translate(0%, 0%) rotate(0deg); }
+          33% { transform: translate(5%, 3%) rotate(5deg); }
+          66% { transform: translate(-3%, 5%) rotate(-3deg); }
+        }
+        @keyframes ambient-float-2 {
+          0%, 100% { transform: translate(0%, 0%) rotate(0deg); }
+          33% { transform: translate(-4%, -2%) rotate(-4deg); }
+          66% { transform: translate(3%, -4%) rotate(3deg); }
+        }
+      `}</style>
+
       {/* Top Bar */}
-      <div className="h-14 bg-surface-0/80 backdrop-blur-sm flex items-center justify-between px-6 border-b border-border/50 shrink-0">
+      <div className="h-14 bg-surface-0/80 backdrop-blur-sm flex items-center justify-between px-6 border-b border-border/50 shrink-0 relative z-10">
         <div className="flex items-center gap-4">
           <h1 className="text-sm font-medium text-foreground">{meeting.title}</h1>
           <div className="flex items-center gap-1.5 text-xs text-aurora-rose">
@@ -176,6 +206,17 @@ export function LiveMeetingRoom({
           {/* Panel Toggles */}
           <div className="flex items-center gap-1 border-l border-border/50 pl-3">
             <Button
+              variant={activePanel === "participants" ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={() => togglePanel("participants")}
+              className="relative"
+            >
+              <Users className="w-4 h-4" />
+              <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full bg-surface-3 text-[10px] flex items-center justify-center text-foreground">
+                {participants.length}
+              </span>
+            </Button>
+            <Button
               variant={activePanel === "chat" ? "secondary" : "ghost"}
               size="iconSm"
               onClick={() => togglePanel("chat")}
@@ -192,6 +233,13 @@ export function LiveMeetingRoom({
               onClick={() => togglePanel("decisions")}
             >
               <Target className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="iconSm"
+              onClick={() => setShowInvite(true)}
+            >
+              <UserPlus className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -226,6 +274,16 @@ export function LiveMeetingRoom({
         {/* Side Panel */}
         {activePanel !== "none" && (
           <div className="w-80 border-l border-border/50 flex flex-col animate-slide-in-right">
+            {activePanel === "participants" && (
+              <ParticipantsList
+                participants={participants}
+                meetingId={meeting.id}
+                meetingTitle={meeting.title}
+                isHost={isHost}
+                isAIEnabled={isAIEnabled}
+                onClose={() => setActivePanel("none")}
+              />
+            )}
             {activePanel === "chat" && (
               <ChatPanel
                 messages={messages}
@@ -253,6 +311,14 @@ export function LiveMeetingRoom({
           </div>
         )}
       </div>
+
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={showInvite}
+        onClose={() => setShowInvite(false)}
+        meetingId={meeting.id}
+        meetingTitle={meeting.title}
+      />
 
       {/* Bottom Controls */}
       <div className="py-4 flex items-center justify-center shrink-0">
