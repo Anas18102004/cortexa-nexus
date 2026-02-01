@@ -5,8 +5,14 @@ import { MeetingControls } from "./MeetingControls";
 import { AIAgent } from "./AIAgent";
 import { AgendaTimeline } from "./AgendaTimeline";
 import { DecisionCapture } from "./DecisionCapture";
+import { ChatPanel } from "./ChatPanel";
+import { BreakoutRooms } from "./BreakoutRooms";
+import { Whiteboard } from "./Whiteboard";
+import { useMeetingChat } from "@/hooks/useMeetingChat";
+import { useBreakoutRooms } from "@/hooks/useBreakoutRooms";
+import { useWhiteboard } from "@/hooks/useWhiteboard";
 import { useState } from "react";
-import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Clock, MessageSquare, Users, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LiveMeetingProps {
@@ -15,6 +21,8 @@ interface LiveMeetingProps {
   onEndMeeting: () => void;
   className?: string;
 }
+
+type SidePanel = "none" | "chat" | "breakout" | "whiteboard";
 
 export function LiveMeeting({
   state,
@@ -29,7 +37,12 @@ export function LiveMeeting({
   const [isCaptionsOn, setIsCaptionsOn] = useState(state.isCaptionsEnabled);
   const [isRecording, setIsRecording] = useState(state.isRecording);
   const [aiMode, setAiMode] = useState<AIMode>(state.aiMode);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [activePanel, setActivePanel] = useState<SidePanel>("none");
+  const [showWhiteboard, setShowWhiteboard] = useState(false);
+
+  const { messages, sendMessage, addReaction } = useMeetingChat();
+  const { rooms, unassignedParticipants, createRoom, deleteRoom, assignParticipant } = useBreakoutRooms();
+  const { annotations, addAnnotation, undo, clear } = useWhiteboard();
 
   const activeSpeaker = state.meeting.participants.find((p) => p.isSpeaking) || 
     state.meeting.participants[0];
@@ -40,55 +53,102 @@ export function LiveMeeting({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const togglePanel = (panel: SidePanel) => {
+    setActivePanel((prev) => (prev === panel ? "none" : panel));
+  };
+
+  if (showWhiteboard) {
+    return (
+      <div className={cn("h-screen bg-background", className)}>
+        <Whiteboard
+          annotations={annotations}
+          onAddAnnotation={addAnnotation}
+          onClear={clear}
+          onUndo={undo}
+          onClose={() => setShowWhiteboard(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("h-screen bg-background flex flex-col", className)}>
-      {/* Top Bar */}
-      <div className="h-14 border-b border-border bg-surface-0 flex items-center justify-between px-4">
+      {/* Minimal Top Bar */}
+      <div className="h-12 bg-surface-0/80 backdrop-blur-sm flex items-center justify-between px-6 border-b border-border/50">
         <div className="flex items-center gap-4">
-          <h1 className="font-semibold text-foreground">{state.meeting.title}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-aurora-rose animate-pulse" />
-            <span>Live</span>
+          <h1 className="text-sm font-medium text-foreground">{state.meeting.title}</h1>
+          <div className="flex items-center gap-1.5 text-xs text-aurora-rose">
+            <div className="w-1.5 h-1.5 rounded-full bg-aurora-rose animate-pulse" />
+            Live
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Timer */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-2">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="font-mono text-sm text-foreground">
-              {formatTime(state.elapsedTime)}
-            </span>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Clock className="w-3.5 h-3.5" />
+            <span className="font-mono">{formatTime(state.elapsedTime)}</span>
           </div>
 
-          {/* Recording Indicator */}
+          {/* Recording Badge */}
           {isRecording && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive">
-              <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
-              <span className="text-sm font-medium">Recording</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs">
+              <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+              REC
             </div>
           )}
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-1 ml-2">
+            <Button
+              variant={activePanel === "chat" ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={() => togglePanel("chat")}
+              className="relative"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {messages.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+              )}
+            </Button>
+            <Button
+              variant={activePanel === "breakout" ? "secondary" : "ghost"}
+              size="iconSm"
+              onClick={() => togglePanel("breakout")}
+            >
+              <Users className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="iconSm"
+              onClick={() => setShowWhiteboard(true)}
+            >
+              <PenTool className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex min-h-0">
-        {/* Left Panel - Agenda & AI (Collapsible on mobile) */}
-        <div className="hidden lg:block w-80 border-r border-border bg-surface-0 p-4 overflow-y-auto">
-          <AgendaTimeline
-            items={state.meeting.agenda}
-            currentIndex={state.currentAgendaIndex}
-            className="mb-6"
-          />
-          <AIAgent
-            mode={aiMode}
-            onModeChange={setAiMode}
-            insights={state.meeting.aiInsights}
-            isThinking={false}
-          />
+        {/* Left Sidebar - Compact Agenda & AI */}
+        <div className="hidden lg:flex w-72 flex-col border-r border-border/50 bg-surface-0/50">
+          <div className="flex-1 overflow-y-auto p-4">
+            <AgendaTimeline
+              items={state.meeting.agenda}
+              currentIndex={state.currentAgendaIndex}
+              className="mb-6"
+            />
+            <AIAgent
+              mode={aiMode}
+              onModeChange={setAiMode}
+              insights={state.meeting.aiInsights}
+              isThinking={false}
+            />
+          </div>
         </div>
 
-        {/* Center - Speaker View */}
+        {/* Center - Main View */}
         <div className="flex-1 flex flex-col p-4 min-w-0">
           <SpeakerView
             activeSpeaker={activeSpeaker}
@@ -96,49 +156,51 @@ export function LiveMeeting({
             className="flex-1"
           />
 
-          {/* Captions Area */}
+          {/* Captions */}
           {isCaptionsOn && (
-            <div className="mt-4 glass-panel rounded-xl p-4 text-center fade-in">
-              <p className="text-foreground">
-                <span className="text-aurora-teal font-medium">Sarah Chen: </span>
+            <div className="mt-3 bg-surface-1/80 backdrop-blur-sm rounded-xl p-3 text-center fade-in">
+              <p className="text-sm text-foreground">
+                <span className="text-primary font-medium">Sarah Chen: </span>
                 "I think we should prioritize the API integration before moving to the new dashboard..."
               </p>
             </div>
           )}
         </div>
 
-        {/* Right Panel - Decisions & Actions */}
-        <div
-          className={cn(
-            "border-l border-border bg-surface-0 transition-all duration-300 overflow-hidden",
-            rightPanelCollapsed ? "w-0" : "w-80"
-          )}
-        >
-          <div className="w-80 h-full p-4 overflow-y-auto">
+        {/* Right Sidebar - Decisions or Dynamic Panel */}
+        {activePanel === "none" ? (
+          <div className="hidden lg:block w-72 border-l border-border/50 bg-surface-0/50 overflow-y-auto p-4">
             <DecisionCapture
               decisions={state.meeting.decisions}
               actionItems={state.meeting.actionItems}
             />
           </div>
-        </div>
-
-        {/* Panel Toggle */}
-        <Button
-          variant="ghost"
-          size="iconSm"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden lg:flex"
-          onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-        >
-          {rightPanelCollapsed ? (
-            <ChevronLeft className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-        </Button>
+        ) : (
+          <div className="w-80 border-l border-border/50 flex flex-col">
+            {activePanel === "chat" && (
+              <ChatPanel
+                messages={messages}
+                onSendMessage={sendMessage}
+                onAddReaction={addReaction}
+                onClose={() => setActivePanel("none")}
+              />
+            )}
+            {activePanel === "breakout" && (
+              <BreakoutRooms
+                rooms={rooms}
+                unassignedParticipants={unassignedParticipants}
+                onCreateRoom={createRoom}
+                onDeleteRoom={deleteRoom}
+                onAssignParticipant={assignParticipant}
+                onClose={() => setActivePanel("none")}
+              />
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Bottom Controls */}
-      <div className="h-20 border-t border-border bg-surface-0 flex items-center justify-center px-4">
+      {/* Bottom Controls - Floating Style */}
+      <div className="py-4 flex items-center justify-center">
         <MeetingControls
           isMuted={isMuted}
           isVideoOn={isVideoOn}
@@ -153,8 +215,8 @@ export function LiveMeeting({
           onToggleHand={() => setIsHandRaised(!isHandRaised)}
           onToggleCaptions={() => setIsCaptionsOn(!isCaptionsOn)}
           onToggleRecording={() => setIsRecording(!isRecording)}
-          onOpenChat={() => {}}
-          onOpenParticipants={() => {}}
+          onOpenChat={() => togglePanel("chat")}
+          onOpenParticipants={() => togglePanel("breakout")}
           onEndCall={onEndMeeting}
         />
       </div>
