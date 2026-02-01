@@ -5,9 +5,14 @@ import {
   Video, 
   VideoOff, 
   MonitorUp,
+  MonitorOff,
   PhoneOff,
   Sparkles,
-  MoreHorizontal
+  MoreHorizontal,
+  Hand,
+  Circle,
+  Square,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,16 +20,30 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MeetingControlsRealProps {
   isMuted: boolean;
   isVideoOn: boolean;
   isAIEnabled: boolean;
+  isScreenSharing?: boolean;
+  isRecording?: boolean;
+  isHandRaised?: boolean;
   participantCount: number;
   onToggleMute: () => void;
   onToggleVideo: () => void;
   onToggleAI: () => void;
   onStartScreenShare: () => void;
+  onStopScreenShare?: () => void;
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  onToggleRaiseHand?: () => void;
   onEndCall: () => void;
   className?: string;
 }
@@ -33,26 +52,32 @@ export function MeetingControlsReal({
   isMuted,
   isVideoOn,
   isAIEnabled,
+  isScreenSharing = false,
+  isRecording = false,
+  isHandRaised = false,
   participantCount,
   onToggleMute,
   onToggleVideo,
   onToggleAI,
   onStartScreenShare,
+  onStopScreenShare,
+  onStartRecording,
+  onStopRecording,
+  onToggleRaiseHand,
   onEndCall,
   className,
 }: MeetingControlsRealProps) {
   return (
     <div className={cn(
-      "flex items-center gap-2 px-4 py-3 rounded-2xl glass-panel shadow-lg",
+      "flex items-center gap-2 px-4 py-3 rounded-2xl glass-panel shadow-glow-lg",
       className
     )}>
       {/* Microphone */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant={isMuted ? "destructive" : "secondary"}
-            size="lg"
-            className="w-12 h-12 rounded-full"
+            variant={isMuted ? "controlActive" : "control"}
+            size="iconLg"
             onClick={onToggleMute}
           >
             {isMuted ? (
@@ -63,7 +88,7 @@ export function MeetingControlsReal({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          {isMuted ? "Unmute" : "Mute"}
+          {isMuted ? "Unmute (M)" : "Mute (M)"}
         </TooltipContent>
       </Tooltip>
 
@@ -71,9 +96,8 @@ export function MeetingControlsReal({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant={isVideoOn ? "secondary" : "destructive"}
-            size="lg"
-            className="w-12 h-12 rounded-full"
+            variant={isVideoOn ? "control" : "controlActive"}
+            size="iconLg"
             onClick={onToggleVideo}
           >
             {isVideoOn ? (
@@ -84,7 +108,7 @@ export function MeetingControlsReal({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          {isVideoOn ? "Turn off camera" : "Turn on camera"}
+          {isVideoOn ? "Turn off camera (V)" : "Turn on camera (V)"}
         </TooltipContent>
       </Tooltip>
 
@@ -92,25 +116,82 @@ export function MeetingControlsReal({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="secondary"
-            size="lg"
-            className="w-12 h-12 rounded-full"
-            onClick={onStartScreenShare}
+            variant={isScreenSharing ? "secondary" : "control"}
+            size="iconLg"
+            onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
+            className={cn(
+              isScreenSharing && "ring-2 ring-primary/50"
+            )}
           >
-            <MonitorUp className="w-5 h-5" />
+            {isScreenSharing ? (
+              <MonitorOff className="w-5 h-5" />
+            ) : (
+              <MonitorUp className="w-5 h-5" />
+            )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Share screen</TooltipContent>
+        <TooltipContent>
+          {isScreenSharing ? "Stop sharing" : "Share screen (S)"}
+        </TooltipContent>
       </Tooltip>
+
+      {/* Raise Hand */}
+      {onToggleRaiseHand && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isHandRaised ? "secondary" : "control"}
+              size="iconLg"
+              onClick={onToggleRaiseHand}
+              className={cn(
+                isHandRaised && "ring-2 ring-aurora-violet/50 text-aurora-violet"
+              )}
+            >
+              <Hand className={cn(
+                "w-5 h-5",
+                isHandRaised && "fill-current"
+              )} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isHandRaised ? "Lower hand" : "Raise hand (H)"}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {/* Recording */}
+      {(onStartRecording || onStopRecording) && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isRecording ? "destructive" : "control"}
+              size="iconLg"
+              onClick={isRecording ? onStopRecording : onStartRecording}
+              className={cn(
+                isRecording && "animate-pulse"
+              )}
+            >
+              {isRecording ? (
+                <Square className="w-4 h-4 fill-current" />
+              ) : (
+                <Circle className="w-5 h-5" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isRecording ? "Stop recording" : "Start recording (R)"}
+          </TooltipContent>
+        </Tooltip>
+      )}
 
       {/* AI Toggle */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant={isAIEnabled ? "secondary" : "ghost"}
-            size="lg"
+            variant={isAIEnabled ? "secondary" : "control"}
+            size="iconLg"
             className={cn(
-              "w-12 h-12 rounded-full relative",
+              "relative",
               isAIEnabled && "ring-2 ring-primary/50"
             )}
             onClick={onToggleAI}
@@ -125,7 +206,7 @@ export function MeetingControlsReal({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          {isAIEnabled ? "Disable AI Assistant" : "Enable AI Assistant"}
+          {isAIEnabled ? "Disable AI Assistant" : "Enable AI Assistant (A)"}
         </TooltipContent>
       </Tooltip>
 
@@ -133,23 +214,50 @@ export function MeetingControlsReal({
       <div className="w-px h-8 bg-border/50 mx-1" />
 
       {/* Participant Count */}
-      <div className="text-sm text-muted-foreground px-2">
-        {participantCount}
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground px-2">
+        <Users className="w-4 h-4" />
+        <span>{participantCount}</span>
       </div>
 
       {/* More Options */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="lg"
-            className="w-12 h-12 rounded-full"
-          >
-            <MoreHorizontal className="w-5 h-5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>More options</TooltipContent>
-      </Tooltip>
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="control"
+                size="iconLg"
+              >
+                <MoreHorizontal className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>More options</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="center" className="w-48">
+          <DropdownMenuItem onClick={onToggleAI}>
+            <Sparkles className="w-4 h-4 mr-2" />
+            {isAIEnabled ? "Disable" : "Enable"} AI Assistant
+          </DropdownMenuItem>
+          {onStartRecording && !isRecording && (
+            <DropdownMenuItem onClick={onStartRecording}>
+              <Circle className="w-4 h-4 mr-2" />
+              Start Recording
+            </DropdownMenuItem>
+          )}
+          {onStopRecording && isRecording && (
+            <DropdownMenuItem onClick={onStopRecording}>
+              <Square className="w-4 h-4 mr-2 fill-current" />
+              Stop Recording
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive" onClick={onEndCall}>
+            <PhoneOff className="w-4 h-4 mr-2" />
+            Leave Meeting
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Divider */}
       <div className="w-px h-8 bg-border/50 mx-1" />
