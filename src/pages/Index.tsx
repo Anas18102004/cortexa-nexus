@@ -2,16 +2,21 @@ import { useState, useEffect } from "react";
 import { PreMeetingLobby } from "@/components/meeting/PreMeetingLobby";
 import { LiveMeeting } from "@/components/meeting/LiveMeeting";
 import { PostMeetingSummary } from "@/components/meeting/PostMeetingSummary";
+import { MeetingOrchestrator } from "@/components/meeting/MeetingOrchestrator";
 import { 
   mockMeeting, 
   mockMeetingState, 
   currentUser as initialUser 
 } from "@/data/mockMeeting";
 import { Participant, MeetingState } from "@/types/meeting";
+import { Button } from "@/components/ui/button";
+import { Video, Monitor } from "lucide-react";
 
 type MeetingPhase = "lobby" | "live" | "summary";
+type MeetingMode = "demo" | "real";
 
 const Index = () => {
+  const [mode, setMode] = useState<MeetingMode>("demo");
   const [phase, setPhase] = useState<MeetingPhase>("lobby");
   const [currentUser, setCurrentUser] = useState<Participant>(initialUser);
   const [meetingState, setMeetingState] = useState<MeetingState>({
@@ -23,7 +28,7 @@ const Index = () => {
 
   // Timer for live meeting
   useEffect(() => {
-    if (phase === "live") {
+    if (phase === "live" && mode === "demo") {
       const interval = setInterval(() => {
         setElapsedTime((prev) => prev + 1);
         setMeetingState((prev) => ({
@@ -33,7 +38,7 @@ const Index = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [phase]);
+  }, [phase, mode]);
 
   const handleJoin = () => {
     setPhase("live");
@@ -53,7 +58,6 @@ const Index = () => {
   };
 
   const handleCloseSummary = () => {
-    // Reset to lobby for demo purposes
     setPhase("lobby");
     setElapsedTime(0);
     setMeetingState(mockMeetingState);
@@ -73,8 +77,47 @@ const Index = () => {
     }));
   };
 
+  // Real WebRTC meeting mode
+  if (mode === "real") {
+    return (
+      <div className="relative">
+        {/* Mode Toggle */}
+        <div className="fixed top-4 right-4 z-50">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMode("demo")}
+            className="glass-panel"
+          >
+            <Monitor className="w-4 h-4 mr-2" />
+            Switch to Demo
+          </Button>
+        </div>
+        
+        <MeetingOrchestrator
+          meeting={mockMeeting}
+          currentUser={currentUser}
+        />
+      </div>
+    );
+  }
+
+  // Demo mode with mock data
   return (
-    <>
+    <div className="relative">
+      {/* Mode Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setMode("real")}
+          className="glass-panel"
+        >
+          <Video className="w-4 h-4 mr-2" />
+          Try Real Meeting
+        </Button>
+      </div>
+
       {phase === "lobby" && (
         <PreMeetingLobby
           meeting={mockMeeting}
@@ -98,7 +141,7 @@ const Index = () => {
           onClose={handleCloseSummary}
         />
       )}
-    </>
+    </div>
   );
 };
 
