@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { useLocalMeeting, LocalParticipant } from "@/hooks/useLocalMeeting";
+import { useRealtimeMeeting, RealtimeParticipant } from "@/hooks/useRealtimeMeeting";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 import { useLiveTranscription } from "@/hooks/useLiveTranscription";
 import { usePushToTalk } from "@/hooks/usePushToTalk";
@@ -52,7 +52,7 @@ interface LiveMeetingRoomLocalProps {
   userId: string;
   userName: string;
   isHost: boolean;
-  localMeeting: ReturnType<typeof useLocalMeeting>;
+  localMeeting: ReturnType<typeof useRealtimeMeeting>;
   onEndMeeting: () => void;
   className?: string;
 }
@@ -233,7 +233,7 @@ export function LiveMeetingRoomLocal({
   const currentAgendaItem = meeting.agenda?.[currentAgendaIndex];
 
   // Get the main display participant
-  const getMainParticipant = (): LocalParticipant | null => {
+  const getMainParticipant = (): RealtimeParticipant | null => {
     if (layoutMode === "spotlight" && spotlightedId) {
       return participants.find(p => p.id === spotlightedId) || null;
     }

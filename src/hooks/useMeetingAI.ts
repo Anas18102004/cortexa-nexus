@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { MeetingParticipant } from "@/hooks/useDailyMeeting";
 import { Decision, ActionItem, AIInsight } from "@/types/meeting";
 import { toast } from "sonner";
 
+// Generic participant interface for AI analysis
+interface AIParticipant {
+  id: string;
+  userName: string;
+  isSpeaking: boolean;
+}
+
 interface UseMeetingAIOptions {
   isEnabled: boolean;
-  participants: MeetingParticipant[];
+  participants: AIParticipant[];
   onDecisionDetected?: (decision: Decision) => void;
   onActionItemDetected?: (actionItem: ActionItem) => void;
   onInsightGenerated?: (insight: AIInsight) => void;
