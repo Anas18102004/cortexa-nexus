@@ -129,13 +129,17 @@ export function LiveMeetingRoomLocal({
   // Chat hook
   const chat = useMeetingChat();
 
-  // Floating reactions hook - with current user info for avatars
+  // Floating reactions hook - with current user info for avatars and realtime sync
   const currentReactionUser = {
     id: userId,
     name: userName,
     avatar: localParticipant?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`,
   };
-  const floatingReactions = useFloatingReactions(currentReactionUser);
+  const floatingReactions = useFloatingReactions({
+    meetingId: meeting.id,
+    currentUser: currentReactionUser,
+    enableRealtime: true,
+  });
 
   // Attach local video stream
   useEffect(() => {
