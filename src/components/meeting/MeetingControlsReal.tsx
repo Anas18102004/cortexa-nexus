@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { 
   Mic, 
   MicOff, 
@@ -48,6 +49,12 @@ interface MeetingControlsRealProps {
   className?: string;
 }
 
+const buttonMotion = {
+  whileHover: { scale: 1.08 },
+  whileTap: { scale: 0.95 },
+  transition: { type: "spring" as const, stiffness: 500, damping: 25 },
+};
+
 export function MeetingControlsReal({
   isMuted,
   isVideoOn,
@@ -68,24 +75,31 @@ export function MeetingControlsReal({
   className,
 }: MeetingControlsRealProps) {
   return (
-    <div className={cn(
-      "flex items-center gap-2 px-4 py-3 rounded-2xl glass-panel shadow-glow-lg",
-      className
-    )}>
+    <motion.div 
+      className={cn(
+        "flex items-center gap-2 px-4 py-3 rounded-2xl glass-panel shadow-glow-lg",
+        className
+      )}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+    >
       {/* Microphone */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant={isMuted ? "controlActive" : "control"}
-            size="iconLg"
-            onClick={onToggleMute}
-          >
-            {isMuted ? (
-              <MicOff className="w-5 h-5" />
-            ) : (
-              <Mic className="w-5 h-5" />
-            )}
-          </Button>
+          <motion.div {...buttonMotion}>
+            <Button
+              variant={isMuted ? "controlActive" : "control"}
+              size="iconLg"
+              onClick={onToggleMute}
+            >
+              {isMuted ? (
+                <MicOff className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
+            </Button>
+          </motion.div>
         </TooltipTrigger>
         <TooltipContent>
           {isMuted ? "Unmute (M)" : "Mute (M)"}
@@ -95,17 +109,19 @@ export function MeetingControlsReal({
       {/* Camera */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant={isVideoOn ? "control" : "controlActive"}
-            size="iconLg"
-            onClick={onToggleVideo}
-          >
-            {isVideoOn ? (
-              <Video className="w-5 h-5" />
-            ) : (
-              <VideoOff className="w-5 h-5" />
-            )}
-          </Button>
+          <motion.div {...buttonMotion}>
+            <Button
+              variant={isVideoOn ? "control" : "controlActive"}
+              size="iconLg"
+              onClick={onToggleVideo}
+            >
+              {isVideoOn ? (
+                <Video className="w-5 h-5" />
+              ) : (
+                <VideoOff className="w-5 h-5" />
+              )}
+            </Button>
+          </motion.div>
         </TooltipTrigger>
         <TooltipContent>
           {isVideoOn ? "Turn off camera (V)" : "Turn on camera (V)"}
@@ -115,20 +131,22 @@ export function MeetingControlsReal({
       {/* Screen Share */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant={isScreenSharing ? "secondary" : "control"}
-            size="iconLg"
-            onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
-            className={cn(
-              isScreenSharing && "ring-2 ring-primary/50"
-            )}
-          >
-            {isScreenSharing ? (
-              <MonitorOff className="w-5 h-5" />
-            ) : (
-              <MonitorUp className="w-5 h-5" />
-            )}
-          </Button>
+          <motion.div {...buttonMotion}>
+            <Button
+              variant={isScreenSharing ? "secondary" : "control"}
+              size="iconLg"
+              onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
+              className={cn(
+                isScreenSharing && "ring-2 ring-primary/50"
+              )}
+            >
+              {isScreenSharing ? (
+                <MonitorOff className="w-5 h-5" />
+              ) : (
+                <MonitorUp className="w-5 h-5" />
+              )}
+            </Button>
+          </motion.div>
         </TooltipTrigger>
         <TooltipContent>
           {isScreenSharing ? "Stop sharing" : "Share screen (S)"}
@@ -139,19 +157,21 @@ export function MeetingControlsReal({
       {onToggleRaiseHand && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant={isHandRaised ? "secondary" : "control"}
-              size="iconLg"
-              onClick={onToggleRaiseHand}
-              className={cn(
-                isHandRaised && "ring-2 ring-aurora-violet/50 text-aurora-violet"
-              )}
-            >
-              <Hand className={cn(
-                "w-5 h-5",
-                isHandRaised && "fill-current"
-              )} />
-            </Button>
+            <motion.div {...buttonMotion}>
+              <Button
+                variant={isHandRaised ? "secondary" : "control"}
+                size="iconLg"
+                onClick={onToggleRaiseHand}
+                className={cn(
+                  isHandRaised && "ring-2 ring-aurora-violet/50 text-aurora-violet"
+                )}
+              >
+                <Hand className={cn(
+                  "w-5 h-5",
+                  isHandRaised && "fill-current"
+                )} />
+              </Button>
+            </motion.div>
           </TooltipTrigger>
           <TooltipContent>
             {isHandRaised ? "Lower hand" : "Raise hand (H)"}
@@ -163,20 +183,22 @@ export function MeetingControlsReal({
       {(onStartRecording || onStopRecording) && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant={isRecording ? "destructive" : "control"}
-              size="iconLg"
-              onClick={isRecording ? onStopRecording : onStartRecording}
-              className={cn(
-                isRecording && "animate-pulse"
-              )}
-            >
-              {isRecording ? (
-                <Square className="w-4 h-4 fill-current" />
-              ) : (
-                <Circle className="w-5 h-5" />
-              )}
-            </Button>
+            <motion.div {...buttonMotion}>
+              <Button
+                variant={isRecording ? "destructive" : "control"}
+                size="iconLg"
+                onClick={isRecording ? onStopRecording : onStartRecording}
+                className={cn(
+                  isRecording && "animate-pulse"
+                )}
+              >
+                {isRecording ? (
+                  <Square className="w-4 h-4 fill-current" />
+                ) : (
+                  <Circle className="w-5 h-5" />
+                )}
+              </Button>
+            </motion.div>
           </TooltipTrigger>
           <TooltipContent>
             {isRecording ? "Stop recording" : "Start recording (R)"}
@@ -187,23 +209,29 @@ export function MeetingControlsReal({
       {/* AI Toggle */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant={isAIEnabled ? "secondary" : "control"}
-            size="iconLg"
-            className={cn(
-              "relative",
-              isAIEnabled && "ring-2 ring-primary/50"
-            )}
-            onClick={onToggleAI}
-          >
-            <Sparkles className={cn(
-              "w-5 h-5",
-              isAIEnabled ? "text-primary" : "text-muted-foreground"
-            )} />
-            {isAIEnabled && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
-            )}
-          </Button>
+          <motion.div {...buttonMotion}>
+            <Button
+              variant={isAIEnabled ? "secondary" : "control"}
+              size="iconLg"
+              className={cn(
+                "relative",
+                isAIEnabled && "ring-2 ring-primary/50"
+              )}
+              onClick={onToggleAI}
+            >
+              <Sparkles className={cn(
+                "w-5 h-5",
+                isAIEnabled ? "text-primary" : "text-muted-foreground"
+              )} />
+              {isAIEnabled && (
+                <motion.span 
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              )}
+            </Button>
+          </motion.div>
         </TooltipTrigger>
         <TooltipContent>
           {isAIEnabled ? "Disable AI Assistant" : "Enable AI Assistant (A)"}
@@ -214,22 +242,27 @@ export function MeetingControlsReal({
       <div className="w-px h-8 bg-border/50 mx-1" />
 
       {/* Participant Count */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground px-2">
+      <motion.div 
+        className="flex items-center gap-1.5 text-sm text-muted-foreground px-2"
+        whileHover={{ scale: 1.05 }}
+      >
         <Users className="w-4 h-4" />
         <span>{participantCount}</span>
-      </div>
+      </motion.div>
 
       {/* More Options */}
       <DropdownMenu>
         <Tooltip>
           <TooltipTrigger asChild>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="control"
-                size="iconLg"
-              >
-                <MoreHorizontal className="w-5 h-5" />
-              </Button>
+              <motion.div {...buttonMotion}>
+                <Button
+                  variant="control"
+                  size="iconLg"
+                >
+                  <MoreHorizontal className="w-5 h-5" />
+                </Button>
+              </motion.div>
             </DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent>More options</TooltipContent>
@@ -265,17 +298,22 @@ export function MeetingControlsReal({
       {/* End Call */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="destructive"
-            size="lg"
-            className="w-14 h-12 rounded-full"
-            onClick={onEndCall}
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <PhoneOff className="w-5 h-5" />
-          </Button>
+            <Button
+              variant="destructive"
+              size="lg"
+              className="w-14 h-12 rounded-full"
+              onClick={onEndCall}
+            >
+              <PhoneOff className="w-5 h-5" />
+            </Button>
+          </motion.div>
         </TooltipTrigger>
         <TooltipContent>Leave meeting</TooltipContent>
       </Tooltip>
-    </div>
+    </motion.div>
   );
 }

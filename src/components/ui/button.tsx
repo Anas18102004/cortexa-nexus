@@ -5,30 +5,30 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-glow-sm hover:bg-primary/90 hover:shadow-glow-md active:scale-[0.98]",
+          "bg-primary text-primary-foreground shadow-glow-sm hover:bg-primary/90 hover:shadow-glow-md hover:scale-[1.02] active:scale-[0.98] active:shadow-glow-sm",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-[0.98]",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:scale-[1.02] active:scale-[0.98]",
         outline:
-          "border border-border bg-transparent hover:bg-surface-2 hover:border-primary/50 active:scale-[0.98]",
+          "border border-border bg-transparent hover:bg-surface-2 hover:border-primary/50 hover:scale-[1.01] active:scale-[0.99]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-glow-violet active:scale-[0.98]",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-glow-violet hover:shadow-[0_0_40px_hsl(var(--aurora-violet)/0.3)] hover:scale-[1.02] active:scale-[0.98]",
         ghost: 
-          "hover:bg-surface-2 hover:text-foreground",
+          "hover:bg-surface-2 hover:text-foreground active:scale-[0.98]",
         link: 
           "text-primary underline-offset-4 hover:underline",
         glass:
-          "glass-panel text-foreground hover:bg-surface-2/80 active:scale-[0.98]",
+          "glass-panel text-foreground hover:bg-surface-2/80 hover:scale-[1.01] active:scale-[0.99]",
         aurora:
-          "bg-gradient-to-r from-aurora-teal via-aurora-cyan to-aurora-violet text-background font-semibold shadow-glow-md hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98]",
+          "bg-gradient-to-r from-primary via-aurora-cyan to-aurora-violet text-primary-foreground font-semibold shadow-glow-md hover:shadow-glow-lg hover:scale-[1.03] active:scale-[0.98] transition-all duration-300",
         control:
-          "bg-surface-2 text-foreground hover:bg-surface-3 rounded-full active:scale-95",
+          "bg-surface-2 text-foreground hover:bg-surface-3 hover:scale-[1.05] rounded-full active:scale-95 transition-transform duration-150",
         controlActive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full active:scale-95",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full hover:scale-[1.05] active:scale-95 transition-transform duration-150",
       },
       size: {
         default: "h-10 px-4 py-2",

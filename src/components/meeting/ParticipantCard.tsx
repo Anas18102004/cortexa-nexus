@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Base participant type that works with both MeetingParticipant and LocalParticipant
 export interface BaseParticipant {
@@ -55,57 +55,57 @@ const roleConfigs: Record<string, RoleConfig> = {
   "Engineering Lead": { 
     category: "engineering", 
     accentClass: "text-aurora-cyan",
-    glowClass: "shadow-[0_0_20px_hsl(188_94%_48%/0.15)]",
-    borderClass: "border-aurora-cyan/30",
+    glowClass: "shadow-[0_0_24px_hsl(186_100%_50%/0.2)]",
+    borderClass: "border-aurora-cyan/40",
     bgGradient: "from-aurora-cyan/10 to-transparent"
   },
   "Frontend Developer": { 
     category: "engineering", 
     accentClass: "text-aurora-cyan",
-    glowClass: "shadow-[0_0_20px_hsl(188_94%_48%/0.15)]",
-    borderClass: "border-aurora-cyan/30",
+    glowClass: "shadow-[0_0_24px_hsl(186_100%_50%/0.2)]",
+    borderClass: "border-aurora-cyan/40",
     bgGradient: "from-aurora-cyan/10 to-transparent"
   },
   "Backend Developer": { 
     category: "engineering", 
     accentClass: "text-aurora-cyan",
-    glowClass: "shadow-[0_0_20px_hsl(188_94%_48%/0.15)]",
-    borderClass: "border-aurora-cyan/30",
+    glowClass: "shadow-[0_0_24px_hsl(186_100%_50%/0.2)]",
+    borderClass: "border-aurora-cyan/40",
     bgGradient: "from-aurora-cyan/10 to-transparent"
   },
   "AI Engineer": { 
     category: "ai", 
     accentClass: "text-primary",
-    glowClass: "shadow-[0_0_20px_hsl(168_76%_50%/0.2)]",
-    borderClass: "border-primary/40",
+    glowClass: "shadow-[0_0_28px_hsl(var(--primary)/0.25)]",
+    borderClass: "border-primary/50",
     bgGradient: "from-primary/15 to-aurora-violet/10"
   },
   "Product Manager": { 
     category: "product", 
     accentClass: "text-aurora-violet",
-    glowClass: "shadow-[0_0_20px_hsl(250_56%_65%/0.15)]",
-    borderClass: "border-aurora-violet/30",
+    glowClass: "shadow-[0_0_24px_hsl(258_90%_66%/0.2)]",
+    borderClass: "border-aurora-violet/40",
     bgGradient: "from-aurora-violet/10 to-transparent"
   },
   "Program Manager": { 
     category: "product", 
     accentClass: "text-aurora-violet",
-    glowClass: "shadow-[0_0_20px_hsl(250_56%_65%/0.15)]",
-    borderClass: "border-aurora-violet/30",
+    glowClass: "shadow-[0_0_24px_hsl(258_90%_66%/0.2)]",
+    borderClass: "border-aurora-violet/40",
     bgGradient: "from-aurora-violet/10 to-transparent"
   },
   "Designer": { 
     category: "design", 
     accentClass: "text-aurora-rose",
-    glowClass: "shadow-[0_0_20px_hsl(340_75%_55%/0.15)]",
-    borderClass: "border-aurora-rose/30",
+    glowClass: "shadow-[0_0_24px_hsl(345_80%_58%/0.2)]",
+    borderClass: "border-aurora-rose/40",
     bgGradient: "from-aurora-rose/10 to-transparent"
   },
   "UX Designer": { 
     category: "design", 
     accentClass: "text-aurora-rose",
-    glowClass: "shadow-[0_0_20px_hsl(340_75%_55%/0.15)]",
-    borderClass: "border-aurora-rose/30",
+    glowClass: "shadow-[0_0_24px_hsl(345_80%_58%/0.2)]",
+    borderClass: "border-aurora-rose/40",
     bgGradient: "from-aurora-rose/10 to-transparent"
   },
 };
@@ -162,17 +162,18 @@ export function ParticipantCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.95, y: 8 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: -8 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
         "group relative rounded-xl p-3 transition-all duration-300 border",
         "bg-gradient-to-br",
         roleConfig.bgGradient,
         roleConfig.borderClass,
         presenceState === "speaking" && roleConfig.glowClass,
-        presenceState === "speaking" && "scale-[1.02]",
-        isHovered && "bg-surface-2/50",
+        isHovered && "bg-surface-2/50 shadow-elevation-2",
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -188,8 +189,8 @@ export function ParticipantCard({
             "ring-transparent"
           )}>
             <AvatarFallback className={cn(
-              "text-sm font-medium",
-              isAI ? "bg-gradient-to-br from-primary to-aurora-violet text-background" :
+              "text-sm font-medium transition-all duration-200",
+              isAI ? "bg-gradient-to-br from-primary to-aurora-violet text-primary-foreground" :
               "bg-surface-3 text-foreground"
             )}>
               {isAI ? (
@@ -201,40 +202,58 @@ export function ParticipantCard({
           </Avatar>
 
           {/* Speaking waveform indicator */}
-          {presenceState === "speaking" && (
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-end gap-0.5 h-3">
-              {[...Array(4)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="w-0.5 bg-primary rounded-full"
-                  animate={{ height: [4, 8 + Math.random() * 4, 4] }}
-                  transition={{
-                    duration: 0.5,
-                    repeat: Infinity,
-                    delay: i * 0.1,
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          <AnimatePresence>
+            {presenceState === "speaking" && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-end gap-0.5 h-3"
+              >
+                {[...Array(4)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-0.5 bg-primary rounded-full"
+                    animate={{ height: [4, 8 + Math.random() * 4, 4] }}
+                    transition={{
+                      duration: 0.5,
+                      repeat: Infinity,
+                      delay: i * 0.1,
+                    }}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Mute indicator */}
-          {presenceState === "muted" && (
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
-              <MicOff className="w-2.5 h-2.5 text-destructive-foreground" />
-            </div>
-          )}
+          <AnimatePresence>
+            {presenceState === "muted" && (
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center"
+              >
+                <MicOff className="w-2.5 h-2.5 text-destructive-foreground" />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Hand raised indicator */}
-          {isHandRaised && (
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-aurora-violet flex items-center justify-center"
-            >
-              <Hand className="w-3 h-3 text-white fill-current" />
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {isHandRaised && (
+              <motion.div 
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 45 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-aurora-violet flex items-center justify-center shadow-glow-violet"
+              >
+                <Hand className="w-3 h-3 text-white fill-current" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Name and role info */}
@@ -255,7 +274,11 @@ export function ParticipantCard({
               </Tooltip>
             )}
             {isAI && (
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <motion.div 
+                className="w-1.5 h-1.5 rounded-full bg-primary"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
             )}
           </div>
           <p className={cn("text-xs truncate", roleConfig.accentClass)}>
@@ -269,46 +292,58 @@ export function ParticipantCard({
         </div>
 
         {/* Actions (visible on hover for host) */}
-        {isHovered && isCurrentUserHost && !participant.isLocal && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="w-6 h-6 rounded-md bg-surface-3 flex items-center justify-center hover:bg-surface-2">
-                <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onSpotlight && (
-                <DropdownMenuItem onClick={onSpotlight}>
-                  <Pin className="w-4 h-4 mr-2" />
-                  Spotlight
-                </DropdownMenuItem>
-              )}
-              {onMute && !participant.isMuted && (
-                <DropdownMenuItem onClick={onMute}>
-                  <VolumeX className="w-4 h-4 mr-2" />
-                  Mute
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              {onRemove && (
-                <DropdownMenuItem onClick={onRemove} className="text-destructive">
-                  <UserMinus className="w-4 h-4 mr-2" />
-                  Remove from meeting
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <AnimatePresence>
+          {isHovered && isCurrentUserHost && !participant.isLocal && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <div className="w-6 h-6 rounded-md bg-surface-3 flex items-center justify-center hover:bg-surface-2 transition-colors">
+                    <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onSpotlight && (
+                    <DropdownMenuItem onClick={onSpotlight}>
+                      <Pin className="w-4 h-4 mr-2" />
+                      Spotlight
+                    </DropdownMenuItem>
+                  )}
+                  {onMute && !participant.isMuted && (
+                    <DropdownMenuItem onClick={onMute}>
+                      <VolumeX className="w-4 h-4 mr-2" />
+                      Mute
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  {onRemove && (
+                    <DropdownMenuItem onClick={onRemove} className="text-destructive">
+                      <UserMinus className="w-4 h-4 mr-2" />
+                      Remove from meeting
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Presence state indicator line at bottom */}
-      <div className={cn(
-        "absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-all duration-500",
-        presenceState === "speaking" ? "bg-primary" :
-        presenceState === "listening" ? "bg-muted-foreground/30" :
-        presenceState === "muted" ? "bg-destructive/50" :
-        "bg-transparent"
-      )} />
+      <motion.div 
+        className={cn(
+          "absolute bottom-0 left-2 right-2 h-0.5 rounded-full",
+          presenceState === "speaking" ? "bg-primary" :
+          presenceState === "listening" ? "bg-muted-foreground/30" :
+          presenceState === "muted" ? "bg-destructive/50" :
+          "bg-transparent"
+        )}
+        layoutId={`presence-${participant.id}`}
+        transition={{ duration: 0.3 }}
+      />
     </motion.div>
   );
 }
@@ -327,18 +362,22 @@ export function ParticipantCardCompact({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className={cn(
-          "relative p-1.5 rounded-lg transition-all duration-200",
-          presenceState === "speaking" && "bg-primary/10 ring-1 ring-primary/30",
-          className
-        )}>
+        <motion.div 
+          className={cn(
+            "relative p-1.5 rounded-lg transition-all duration-200",
+            presenceState === "speaking" && "bg-primary/10 ring-1 ring-primary/30",
+            className
+          )}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           <Avatar className={cn(
             "w-8 h-8",
             presenceState === "speaking" && "speaker-ring"
           )}>
             <AvatarFallback className={cn(
               "text-xs font-medium",
-              isAI ? "bg-gradient-to-br from-primary to-aurora-violet text-background" :
+              isAI ? "bg-gradient-to-br from-primary to-aurora-violet text-primary-foreground" :
               "bg-surface-3 text-foreground"
             )}>
               {isAI ? (
@@ -350,17 +389,25 @@ export function ParticipantCardCompact({
           </Avatar>
 
           {participant.isMuted && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-destructive flex items-center justify-center">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-destructive flex items-center justify-center"
+            >
               <MicOff className="w-2 h-2 text-destructive-foreground" />
-            </div>
+            </motion.div>
           )}
 
           {isHandRaised && (
-            <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-aurora-violet flex items-center justify-center">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-aurora-violet flex items-center justify-center"
+            >
               <Hand className="w-2 h-2 text-white fill-current" />
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
         <p className="font-medium">{participant.userName}</p>

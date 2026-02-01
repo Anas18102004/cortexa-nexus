@@ -2,9 +2,20 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)} {...props} />
-));
+const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div 
+      ref={ref} 
+      className={cn(
+        "rounded-xl border bg-card text-card-foreground",
+        "shadow-elevation-1 transition-all duration-300 ease-out",
+        "hover:shadow-elevation-2 hover:border-primary/20",
+        className
+      )} 
+      {...props} 
+    />
+  )
+);
 Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
@@ -40,4 +51,47 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+// Premium Card variant with enhanced styling
+const PremiumCard = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div 
+      ref={ref} 
+      className={cn(
+        "premium-card",
+        className
+      )} 
+      {...props} 
+    />
+  )
+);
+PremiumCard.displayName = "PremiumCard";
+
+// Interactive Card with hover effects
+const InteractiveCard = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div 
+      ref={ref} 
+      className={cn(
+        "rounded-xl border bg-card text-card-foreground cursor-pointer",
+        "shadow-elevation-1 transition-all duration-200 ease-out",
+        "hover:shadow-card-hover hover:border-primary/30",
+        "hover:-translate-y-1 hover:scale-[1.01]",
+        "active:scale-[0.99] active:translate-y-0",
+        className
+      )} 
+      {...props} 
+    />
+  )
+);
+InteractiveCard.displayName = "InteractiveCard";
+
+export { 
+  Card, 
+  CardHeader, 
+  CardFooter, 
+  CardTitle, 
+  CardDescription, 
+  CardContent,
+  PremiumCard,
+  InteractiveCard,
+};
