@@ -70,6 +70,9 @@ export interface Meeting {
 
 export type AIMode = 'assist' | 'semi-auto' | 'auto';
 
+// Progressive Intelligence Panel Modes
+export type MeetingUIMode = 'focus' | 'guided' | 'decision' | 'review';
+
 export interface MeetingState {
   meeting: Meeting;
   currentAgendaIndex: number;
@@ -77,4 +80,5 @@ export interface MeetingState {
   aiMode: AIMode;
   isCaptionsEnabled: boolean;
   isRecording: boolean;
+  uiMode: MeetingUIMode;
 }

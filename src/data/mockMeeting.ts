@@ -213,10 +213,11 @@ export const mockMeeting: Meeting = {
 export const mockMeetingState: MeetingState = {
   meeting: mockMeeting,
   currentAgendaIndex: 1,
-  elapsedTime: 1520, // ~25 minutes
+  elapsedTime: 0, // Start at 0 for progressive reveal demo
   aiMode: "semi-auto",
   isCaptionsEnabled: false,
   isRecording: true,
+  uiMode: "focus", // Start in focus mode
 };
 
 export const currentUser: Participant = mockParticipants[0];
