@@ -145,6 +145,46 @@ export function LiveMeetingRoomLocal({
     enableRealtime: true,
   });
 
+  // Real-time presence tracking
+  const realtimePresence = useRealtimePresence({
+    meetingId: meeting.id,
+    userId,
+    userName,
+    isHost,
+    avatarUrl: localParticipant?.avatarUrl,
+    onUserJoined: (user) => {
+      console.log(`[Presence] ${user.userName} joined the meeting`);
+    },
+    onUserLeft: (user) => {
+      console.log(`[Presence] ${user.userName} left the meeting`);
+    },
+  });
+
+  // Join presence channel when meeting joins
+  useEffect(() => {
+    if (isJoined && !realtimePresence.isConnected) {
+      realtimePresence.joinPresence();
+    }
+  }, [isJoined]);
+
+  // Sync local participant state with presence
+  useEffect(() => {
+    if (localParticipant && realtimePresence.isConnected) {
+      realtimePresence.updateLocalState({
+        isMuted: localParticipant.isMuted,
+        isVideoOn: localParticipant.isVideoOn,
+        isSpeaking: localParticipant.isSpeaking,
+        isHandRaised: localParticipant.isHandRaised,
+      });
+    }
+  }, [
+    localParticipant?.isMuted,
+    localParticipant?.isVideoOn,
+    localParticipant?.isSpeaking,
+    localParticipant?.isHandRaised,
+    realtimePresence.isConnected,
+  ]);
+
   // Attach local video stream
   useEffect(() => {
     if (localVideoRef.current && localStream) {
