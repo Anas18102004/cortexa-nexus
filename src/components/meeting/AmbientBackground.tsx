@@ -31,10 +31,11 @@ export function AmbientBackground({
 
   return (
     <div className={cn("fixed inset-0 pointer-events-none overflow-hidden", className)}>
-      {/* Primary aurora gradient - teal/emerald */}
+      {/* Primary aurora gradient - teal/cyan */}
       <motion.div 
-        className="absolute -top-1/2 -left-1/4 w-[100%] h-[100%] rounded-full bg-gradient-radial from-aurora-teal to-transparent"
+        className="absolute -top-1/2 -left-1/4 w-[100%] h-[100%] rounded-full"
         style={{
+          background: `radial-gradient(circle, hsl(var(--aurora-teal)) 0%, transparent 70%)`,
           filter: `blur(${blurAmount}px)`,
           opacity: baseOpacity,
         }}
