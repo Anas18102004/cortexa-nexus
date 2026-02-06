@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useRealtimeMeeting, RealtimeParticipant } from "@/hooks/useRealtimeMeeting";
+import { useRealtimePresence } from "@/hooks/useRealtimePresence";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 import { useLiveTranscription } from "@/hooks/useLiveTranscription";
 import { usePushToTalk } from "@/hooks/usePushToTalk";
@@ -17,6 +18,8 @@ import { ReactionActivityFeed } from "./ReactionActivityFeed";
 import { ChatPanel } from "./ChatPanel";
 import { DecisionCapture } from "./DecisionCapture";
 import { ParticipantsList } from "./ParticipantsList";
+import { LiveParticipantsList } from "./LiveParticipantsList";
+import { ParticipantJoinNotification } from "./ParticipantJoinNotification";
 import { InviteModal } from "./InviteModal";
 import { LiveTranscript } from "./LiveTranscript";
 import { AINudge } from "./AIInsightCard";
