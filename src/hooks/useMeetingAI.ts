@@ -152,7 +152,7 @@ export function useMeetingAI({
 
   // Generate an AI insight
   const generateInsight = useCallback(async (type: AIInsight["type"]) => {
-    if (!isEnabled) return;
+    if (!isEnabled || !meetingId) return;
 
     setIsProcessing(true);
     try {
@@ -161,6 +161,7 @@ export function useMeetingAI({
         body: {
           action: "summarize",
           transcript: transcriptRef.current.slice(-10).join("\n"), // Last 10 entries
+          meetingId,
           context: `Generate a brief ${type} insight`,
         },
       });
@@ -182,7 +183,7 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, [isEnabled, onInsightGenerated]);
+  }, [isEnabled, meetingId, onInsightGenerated]);
 
   // Clear all data (for new meeting)
   const reset = useCallback(() => {
