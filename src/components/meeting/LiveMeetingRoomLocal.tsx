@@ -373,11 +373,21 @@ export function LiveMeetingRoomLocal({
             </div>
           )}
 
-          {/* Timer & Network Quality */}
+          {/* Timer, Network Quality & Live Presence Count */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
             <span className="font-mono">{formatTime(elapsedTime)}</span>
             <NetworkQualityIndicator />
+            
+            {/* Live presence indicator */}
+            {realtimePresence.isConnected && realtimePresence.users.length > 0 && (
+              <div className="flex items-center gap-1.5 ml-2 px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-xs font-medium text-primary">
+                  {realtimePresence.users.length} live
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Layout Modes */}
