@@ -113,13 +113,14 @@ export function AmbientBackground({
         }}
       />
 
-      {/* Light mode: warm accent overlay */}
+      {/* Light mode: rose gold accent overlay */}
       {isLight && (
         <motion.div 
-          className="absolute -bottom-1/2 left-1/4 w-[60%] h-[60%] rounded-full bg-gradient-radial from-aurora-rose/20 to-transparent"
+          className="absolute -bottom-1/2 left-1/4 w-[60%] h-[60%] rounded-full"
           style={{
+            background: `radial-gradient(circle, hsl(var(--aurora-rose)) 0%, transparent 70%)`,
             filter: `blur(${blurAmount}px)`,
-            opacity: 0.1,
+            opacity: 0.08,
           }}
           animate={{
             x: ["0%", "3%", "0%"],
