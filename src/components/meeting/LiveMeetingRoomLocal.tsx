@@ -166,6 +166,7 @@ export function LiveMeetingRoomLocal({
   // AI Assistant hook
   const meetingAI = useMeetingAI({
     isEnabled: isAIEnabled,
+    meetingId: meeting.id,
     participants,
     onDecisionDetected: (decision) => {
       console.log("Decision detected:", decision);

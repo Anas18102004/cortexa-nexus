@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Decision, ActionItem, AIInsight } from "@/types/meeting";
 import { toast } from "sonner";
@@ -13,6 +12,7 @@ interface AIParticipant {
 
 interface UseMeetingAIOptions {
   isEnabled: boolean;
+  meetingId: string;
   participants: AIParticipant[];
   onDecisionDetected?: (decision: Decision) => void;
   onActionItemDetected?: (actionItem: ActionItem) => void;
@@ -21,6 +21,7 @@ interface UseMeetingAIOptions {
 
 export function useMeetingAI({
   isEnabled,
+  meetingId,
   participants,
   onDecisionDetected,
   onActionItemDetected,
@@ -45,7 +46,7 @@ export function useMeetingAI({
 
   // Analyze transcript for decisions
   const analyzeForDecisions = useCallback(async () => {
-    if (!isEnabled || transcriptRef.current.length === 0) return;
+    if (!isEnabled || !meetingId || transcriptRef.current.length === 0) return;
     if (transcriptRef.current.length === lastProcessedRef.current) return;
 
     setIsProcessing(true);
@@ -57,13 +58,14 @@ export function useMeetingAI({
         body: {
           action: "decisions",
           transcript: recentTranscript,
+          meetingId,
         },
       });
 
       if (error) throw error;
 
       if (data?.result && Array.isArray(data.result)) {
-        const newDecisions: Decision[] = data.result.map((d: any, i: number) => ({
+        const newDecisions: Decision[] = data.result.map((d: any) => ({
           id: crypto.randomUUID(),
           content: d.content,
           owner: d.owner,
@@ -79,11 +81,11 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, [isEnabled, onDecisionDetected]);
+  }, [isEnabled, meetingId, onDecisionDetected]);
 
   // Analyze transcript for action items
   const analyzeForActions = useCallback(async () => {
-    if (!isEnabled || transcriptRef.current.length === 0) return;
+    if (!isEnabled || !meetingId || transcriptRef.current.length === 0) return;
 
     setIsProcessing(true);
     try {
@@ -91,6 +93,7 @@ export function useMeetingAI({
         body: {
           action: "actions",
           transcript: transcriptRef.current.join("\n"),
+          meetingId,
         },
       });
 
@@ -114,11 +117,11 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, [isEnabled, onActionItemDetected]);
+  }, [isEnabled, meetingId, onActionItemDetected]);
 
   // Generate meeting summary
   const generateSummary = useCallback(async () => {
-    if (transcriptRef.current.length === 0) {
+    if (!meetingId || transcriptRef.current.length === 0) {
       toast.error("No transcript available to summarize");
       return "";
     }
@@ -129,6 +132,7 @@ export function useMeetingAI({
         body: {
           action: "summarize",
           transcript: transcriptRef.current.join("\n"),
+          meetingId,
         },
       });
 
@@ -144,11 +148,11 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [meetingId]);
 
   // Generate an AI insight
   const generateInsight = useCallback(async (type: AIInsight["type"]) => {
-    if (!isEnabled) return;
+    if (!isEnabled || !meetingId) return;
 
     setIsProcessing(true);
     try {
@@ -157,6 +161,7 @@ export function useMeetingAI({
         body: {
           action: "summarize",
           transcript: transcriptRef.current.slice(-10).join("\n"), // Last 10 entries
+          meetingId,
           context: `Generate a brief ${type} insight`,
         },
       });
@@ -178,7 +183,7 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, [isEnabled, onInsightGenerated]);
+  }, [isEnabled, meetingId, onInsightGenerated]);
 
   // Clear all data (for new meeting)
   const reset = useCallback(() => {
