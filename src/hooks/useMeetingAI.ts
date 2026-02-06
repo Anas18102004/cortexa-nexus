@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Decision, ActionItem, AIInsight } from "@/types/meeting";
 import { toast } from "sonner";
@@ -13,6 +12,7 @@ interface AIParticipant {
 
 interface UseMeetingAIOptions {
   isEnabled: boolean;
+  meetingId: string;
   participants: AIParticipant[];
   onDecisionDetected?: (decision: Decision) => void;
   onActionItemDetected?: (actionItem: ActionItem) => void;
@@ -21,6 +21,7 @@ interface UseMeetingAIOptions {
 
 export function useMeetingAI({
   isEnabled,
+  meetingId,
   participants,
   onDecisionDetected,
   onActionItemDetected,
