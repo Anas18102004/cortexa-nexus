@@ -46,7 +46,7 @@ export function useMeetingAI({
 
   // Analyze transcript for decisions
   const analyzeForDecisions = useCallback(async () => {
-    if (!isEnabled || transcriptRef.current.length === 0) return;
+    if (!isEnabled || !meetingId || transcriptRef.current.length === 0) return;
     if (transcriptRef.current.length === lastProcessedRef.current) return;
 
     setIsProcessing(true);
@@ -58,13 +58,14 @@ export function useMeetingAI({
         body: {
           action: "decisions",
           transcript: recentTranscript,
+          meetingId,
         },
       });
 
       if (error) throw error;
 
       if (data?.result && Array.isArray(data.result)) {
-        const newDecisions: Decision[] = data.result.map((d: any, i: number) => ({
+        const newDecisions: Decision[] = data.result.map((d: any) => ({
           id: crypto.randomUUID(),
           content: d.content,
           owner: d.owner,
@@ -80,7 +81,7 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, [isEnabled, onDecisionDetected]);
+  }, [isEnabled, meetingId, onDecisionDetected]);
 
   // Analyze transcript for action items
   const analyzeForActions = useCallback(async () => {
