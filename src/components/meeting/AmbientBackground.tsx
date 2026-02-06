@@ -54,8 +54,9 @@ export function AmbientBackground({
       
       {/* Secondary aurora gradient - violet/purple */}
       <motion.div 
-        className="absolute -bottom-1/3 -right-1/4 w-[80%] h-[80%] rounded-full bg-gradient-radial from-aurora-violet to-transparent"
+        className="absolute -bottom-1/3 -right-1/4 w-[80%] h-[80%] rounded-full"
         style={{
+          background: `radial-gradient(circle, hsl(var(--aurora-violet)) 0%, transparent 70%)`,
           filter: `blur(${blurAmount - 20}px)`,
           opacity: baseOpacity,
         }}
