@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +10,65 @@ const corsHeaders = {
 interface AnalyzeRequest {
   action: "summarize" | "decisions" | "actions" | "transcribe";
   transcript: string;
+  meetingId: string;
   context?: string;
+}
+
+const VALID_ACTIONS = ["summarize", "decisions", "actions", "transcribe"];
+const MAX_TRANSCRIPT_LENGTH = 50000; // 50KB max
+const MAX_CONTEXT_LENGTH = 1000;
+
+// Input validation
+function validateInput(params: {
+  action?: string;
+  transcript?: string;
+  meetingId?: string;
+  context?: string;
+}): { valid: boolean; error?: string } {
+  if (params.action && !VALID_ACTIONS.includes(params.action)) {
+    return { valid: false, error: "Invalid action. Must be one of: summarize, decisions, actions, transcribe" };
+  }
+  if (params.meetingId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.meetingId)) {
+    return { valid: false, error: "Invalid meeting ID format" };
+  }
+  if (params.transcript && params.transcript.length > MAX_TRANSCRIPT_LENGTH) {
+    return { valid: false, error: `Transcript too long (max ${MAX_TRANSCRIPT_LENGTH} characters)` };
+  }
+  if (params.context && params.context.length > MAX_CONTEXT_LENGTH) {
+    return { valid: false, error: `Context too long (max ${MAX_CONTEXT_LENGTH} characters)` };
+  }
+  if (!params.transcript || params.transcript.trim().length === 0) {
+    return { valid: false, error: "Transcript is required" };
+  }
+  return { valid: true };
+}
+
+// Authentication helper
+async function authenticateRequest(req: Request): Promise<{
+  user: { id: string } | null;
+  supabase: ReturnType<typeof createClient>;
+  error?: string;
+}> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { user: null, supabase: null as any, error: "Missing or invalid authorization header" };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data, error } = await supabase.auth.getUser(token);
+  
+  if (error || !data?.user) {
+    return { user: null, supabase, error: "Invalid or expired token" };
+  }
+
+  return { user: data.user, supabase, error: undefined };
 }
 
 serve(async (req) => {
@@ -27,15 +86,64 @@ serve(async (req) => {
   }
 
   try {
-    const { action, transcript, context } = (await req.json()) as AnalyzeRequest;
+    // Authenticate the request
+    const { user, supabase, error: authError } = await authenticateRequest(req);
+    if (authError || !user) {
+      console.error("Authentication failed:", authError);
+      return new Response(
+        JSON.stringify({ error: authError || "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { action, transcript, meetingId, context } = (await req.json()) as AnalyzeRequest;
+
+    // Validate input
+    const validation = validateInput({ action, transcript, meetingId, context });
+    if (!validation.valid) {
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify user has access to this meeting (is host or participant)
+    const { data: meeting } = await supabase
+      .from("meetings")
+      .select("host_id")
+      .eq("id", meetingId)
+      .single();
+
+    const isHost = meeting?.host_id === user.id;
+
+    if (!isHost) {
+      const { data: participant } = await supabase
+        .from("meeting_participants")
+        .select("id")
+        .eq("meeting_id", meetingId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (!participant) {
+        console.error("User does not have access to meeting:", user.id, meetingId);
+        return new Response(
+          JSON.stringify({ error: "You do not have access to this meeting" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     let systemPrompt = "";
     let userPrompt = "";
 
+    // Sanitize transcript for prompt injection prevention
+    const sanitizedTranscript = transcript.replace(/```/g, "'''");
+    const sanitizedContext = context?.replace(/```/g, "'''") || "";
+
     switch (action) {
       case "summarize":
         systemPrompt = `You are Nova AI, an intelligent meeting assistant. You provide concise, actionable summaries of meeting discussions. Focus on key points, decisions made, and next steps. Be professional but conversational.`;
-        userPrompt = `Summarize the following meeting transcript in 3-5 bullet points:\n\n${transcript}`;
+        userPrompt = `Summarize the following meeting transcript in 3-5 bullet points:\n\n${sanitizedTranscript}`;
         break;
 
       case "decisions":
@@ -45,9 +153,9 @@ serve(async (req) => {
 - Owner: Who is responsible
 - Status: proposed/confirmed/deferred
 
-Transcript:\n${transcript}
+Transcript:\n${sanitizedTranscript}
 
-${context ? `Context: ${context}` : ""}
+${sanitizedContext ? `Context: ${sanitizedContext}` : ""}
 
 Return as JSON array: [{"content": "...", "owner": "...", "status": "..."}]`;
         break;
@@ -60,16 +168,16 @@ Return as JSON array: [{"content": "...", "owner": "...", "status": "..."}]`;
 - Priority: low/medium/high
 - Deadline: If mentioned (ISO date format or null)
 
-Transcript:\n${transcript}
+Transcript:\n${sanitizedTranscript}
 
-${context ? `Context: ${context}` : ""}
+${sanitizedContext ? `Context: ${sanitizedContext}` : ""}
 
 Return as JSON array: [{"task": "...", "assignee": "...", "priority": "...", "deadline": null}]`;
         break;
 
       case "transcribe":
         systemPrompt = `You are Nova AI. Clean up and format the provided speech-to-text transcription. Fix grammar, punctuation, and speaker attribution where possible. Maintain the original meaning.`;
-        userPrompt = `Clean up this transcription:\n\n${transcript}`;
+        userPrompt = `Clean up this transcription:\n\n${sanitizedTranscript}`;
         break;
 
       default:
@@ -121,7 +229,6 @@ Return as JSON array: [{"task": "...", "assignee": "...", "priority": "...", "de
     let result: any = content;
     if (action === "decisions" || action === "actions") {
       try {
-        // Extract JSON from the response
         const jsonMatch = content.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
           result = JSON.parse(jsonMatch[0]);
@@ -132,7 +239,7 @@ Return as JSON array: [{"task": "...", "assignee": "...", "priority": "...", "de
       }
     }
 
-    console.log(`AI ${action} completed successfully`);
+    console.log(`AI ${action} completed for user:`, user.id, "meeting:", meetingId);
     return new Response(JSON.stringify({ result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
