@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useRealtimeMeeting, RealtimeParticipant } from "@/hooks/useRealtimeMeeting";
+import { useRealtimePresence } from "@/hooks/useRealtimePresence";
 import { useMeetingAI } from "@/hooks/useMeetingAI";
 import { useLiveTranscription } from "@/hooks/useLiveTranscription";
 import { usePushToTalk } from "@/hooks/usePushToTalk";
@@ -17,6 +18,8 @@ import { ReactionActivityFeed } from "./ReactionActivityFeed";
 import { ChatPanel } from "./ChatPanel";
 import { DecisionCapture } from "./DecisionCapture";
 import { ParticipantsList } from "./ParticipantsList";
+import { LiveParticipantsList } from "./LiveParticipantsList";
+import { ParticipantJoinNotification } from "./ParticipantJoinNotification";
 import { InviteModal } from "./InviteModal";
 import { LiveTranscript } from "./LiveTranscript";
 import { AINudge } from "./AIInsightCard";
@@ -141,6 +144,46 @@ export function LiveMeetingRoomLocal({
     currentUser: currentReactionUser,
     enableRealtime: true,
   });
+
+  // Real-time presence tracking
+  const realtimePresence = useRealtimePresence({
+    meetingId: meeting.id,
+    userId,
+    userName,
+    isHost,
+    avatarUrl: localParticipant?.avatarUrl,
+    onUserJoined: (user) => {
+      console.log(`[Presence] ${user.userName} joined the meeting`);
+    },
+    onUserLeft: (user) => {
+      console.log(`[Presence] ${user.userName} left the meeting`);
+    },
+  });
+
+  // Join presence channel when meeting joins
+  useEffect(() => {
+    if (isJoined && !realtimePresence.isConnected) {
+      realtimePresence.joinPresence();
+    }
+  }, [isJoined]);
+
+  // Sync local participant state with presence
+  useEffect(() => {
+    if (localParticipant && realtimePresence.isConnected) {
+      realtimePresence.updateLocalState({
+        isMuted: localParticipant.isMuted,
+        isVideoOn: localParticipant.isVideoOn,
+        isSpeaking: localParticipant.isSpeaking,
+        isHandRaised: localParticipant.isHandRaised,
+      });
+    }
+  }, [
+    localParticipant?.isMuted,
+    localParticipant?.isVideoOn,
+    localParticipant?.isSpeaking,
+    localParticipant?.isHandRaised,
+    realtimePresence.isConnected,
+  ]);
 
   // Attach local video stream
   useEffect(() => {
@@ -330,11 +373,21 @@ export function LiveMeetingRoomLocal({
             </div>
           )}
 
-          {/* Timer & Network Quality */}
+          {/* Timer, Network Quality & Live Presence Count */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
             <span className="font-mono">{formatTime(elapsedTime)}</span>
             <NetworkQualityIndicator />
+            
+            {/* Live presence indicator */}
+            {realtimePresence.isConnected && realtimePresence.users.length > 0 && (
+              <div className="flex items-center gap-1.5 ml-2 px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-xs font-medium text-primary">
+                  {realtimePresence.users.length} live
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Layout Modes */}
@@ -484,6 +537,9 @@ export function LiveMeetingRoomLocal({
           onDenyAll={denyAll}
         />
       )}
+
+      {/* Participant Join/Leave Notifications */}
+      <ParticipantJoinNotification events={realtimePresence.recentEvents} />
 
       {/* AI Nudge */}
       <AnimatePresence>
@@ -700,17 +756,11 @@ export function LiveMeetingRoomLocal({
               className="w-80 border-l border-border/50 flex flex-col bg-surface-0/50 backdrop-blur-sm"
             >
               {activePanel === "participants" && (
-                <ParticipantsList
-                  participants={participants}
-                  meetingId={meeting.id}
-                  meetingTitle={meeting.title}
-                  isHost={isHost}
-                  isAIEnabled={isAIEnabled}
-                  onMuteParticipant={isHost ? muteParticipant : undefined}
-                  onRemoveParticipant={isHost ? removeParticipant : undefined}
-                  onSpotlightParticipant={handleToggleSpotlight}
-                  onMuteAll={isHost ? muteAll : undefined}
-                  onLowerAllHands={isHost ? lowerAllHands : undefined}
+                <LiveParticipantsList
+                  users={realtimePresence.users}
+                  localUserId={userId}
+                  isConnected={realtimePresence.isConnected}
+                  recentEvents={realtimePresence.recentEvents}
                   onClose={() => setActivePanel("none")}
                 />
               )}
