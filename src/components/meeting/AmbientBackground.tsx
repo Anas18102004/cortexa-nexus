@@ -31,10 +31,11 @@ export function AmbientBackground({
 
   return (
     <div className={cn("fixed inset-0 pointer-events-none overflow-hidden", className)}>
-      {/* Primary aurora gradient - teal/emerald */}
+      {/* Primary aurora gradient - teal/cyan */}
       <motion.div 
-        className="absolute -top-1/2 -left-1/4 w-[100%] h-[100%] rounded-full bg-gradient-radial from-aurora-teal to-transparent"
+        className="absolute -top-1/2 -left-1/4 w-[100%] h-[100%] rounded-full"
         style={{
+          background: `radial-gradient(circle, hsl(var(--aurora-teal)) 0%, transparent 70%)`,
           filter: `blur(${blurAmount}px)`,
           opacity: baseOpacity,
         }}
@@ -53,8 +54,9 @@ export function AmbientBackground({
       
       {/* Secondary aurora gradient - violet/purple */}
       <motion.div 
-        className="absolute -bottom-1/3 -right-1/4 w-[80%] h-[80%] rounded-full bg-gradient-radial from-aurora-violet to-transparent"
+        className="absolute -bottom-1/3 -right-1/4 w-[80%] h-[80%] rounded-full"
         style={{
+          background: `radial-gradient(circle, hsl(var(--aurora-violet)) 0%, transparent 70%)`,
           filter: `blur(${blurAmount - 20}px)`,
           opacity: baseOpacity,
         }}
@@ -73,8 +75,9 @@ export function AmbientBackground({
 
       {/* Tertiary accent - cyan/blue */}
       <motion.div 
-        className="absolute top-1/4 right-1/3 w-[50%] h-[50%] rounded-full bg-gradient-radial from-aurora-cyan to-transparent"
+        className="absolute top-1/4 right-1/3 w-[50%] h-[50%] rounded-full"
         style={{
+          background: `radial-gradient(circle, hsl(var(--aurora-cyan)) 0%, transparent 70%)`,
           filter: `blur(${blurAmount - 40}px)`,
           opacity: isLight ? baseOpacity * 0.5 : baseOpacity * 0.6,
         }}
@@ -90,13 +93,34 @@ export function AmbientBackground({
         }}
       />
 
-      {/* Light mode: warm accent overlay */}
+      {/* Gold accent - warm touch */}
+      <motion.div 
+        className="absolute bottom-1/4 left-1/4 w-[40%] h-[40%] rounded-full"
+        style={{
+          background: `radial-gradient(circle, hsl(var(--aurora-gold)) 0%, transparent 70%)`,
+          filter: `blur(${blurAmount}px)`,
+          opacity: isLight ? baseOpacity * 0.3 : baseOpacity * 0.2,
+        }}
+        animate={{
+          x: ["0%", "5%", "0%"],
+          y: ["0%", "-3%", "0%"],
+          scale: [1, 1.05, 1],
+        }}
+        transition={{
+          duration: 32,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* Light mode: rose gold accent overlay */}
       {isLight && (
         <motion.div 
-          className="absolute -bottom-1/2 left-1/4 w-[60%] h-[60%] rounded-full bg-gradient-radial from-aurora-rose/20 to-transparent"
+          className="absolute -bottom-1/2 left-1/4 w-[60%] h-[60%] rounded-full"
           style={{
+            background: `radial-gradient(circle, hsl(var(--aurora-rose)) 0%, transparent 70%)`,
             filter: `blur(${blurAmount}px)`,
-            opacity: 0.1,
+            opacity: 0.08,
           }}
           animate={{
             x: ["0%", "3%", "0%"],

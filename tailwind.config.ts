@@ -62,12 +62,21 @@ export default {
           violet: "hsl(var(--aurora-violet))",
           cyan: "hsl(var(--aurora-cyan))",
           rose: "hsl(var(--aurora-rose))",
+          gold: "hsl(var(--aurora-gold))",
+          emerald: "hsl(var(--aurora-emerald))",
         },
         surface: {
           0: "hsl(var(--surface-0))",
           1: "hsl(var(--surface-1))",
           2: "hsl(var(--surface-2))",
           3: "hsl(var(--surface-3))",
+        },
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
         },
       },
       borderRadius: {
