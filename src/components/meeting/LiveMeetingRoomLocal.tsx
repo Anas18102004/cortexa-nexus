@@ -756,17 +756,11 @@ export function LiveMeetingRoomLocal({
               className="w-80 border-l border-border/50 flex flex-col bg-surface-0/50 backdrop-blur-sm"
             >
               {activePanel === "participants" && (
-                <ParticipantsList
-                  participants={participants}
-                  meetingId={meeting.id}
-                  meetingTitle={meeting.title}
-                  isHost={isHost}
-                  isAIEnabled={isAIEnabled}
-                  onMuteParticipant={isHost ? muteParticipant : undefined}
-                  onRemoveParticipant={isHost ? removeParticipant : undefined}
-                  onSpotlightParticipant={handleToggleSpotlight}
-                  onMuteAll={isHost ? muteAll : undefined}
-                  onLowerAllHands={isHost ? lowerAllHands : undefined}
+                <LiveParticipantsList
+                  users={realtimePresence.users}
+                  localUserId={userId}
+                  isConnected={realtimePresence.isConnected}
+                  recentEvents={realtimePresence.recentEvents}
                   onClose={() => setActivePanel("none")}
                 />
               )}
