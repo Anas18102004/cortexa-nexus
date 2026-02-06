@@ -121,7 +121,7 @@ export function useMeetingAI({
 
   // Generate meeting summary
   const generateSummary = useCallback(async () => {
-    if (transcriptRef.current.length === 0) {
+    if (!meetingId || transcriptRef.current.length === 0) {
       toast.error("No transcript available to summarize");
       return "";
     }
@@ -132,6 +132,7 @@ export function useMeetingAI({
         body: {
           action: "summarize",
           transcript: transcriptRef.current.join("\n"),
+          meetingId,
         },
       });
 
@@ -147,7 +148,7 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [meetingId]);
 
   // Generate an AI insight
   const generateInsight = useCallback(async (type: AIInsight["type"]) => {
