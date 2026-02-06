@@ -147,6 +147,7 @@ export function MeetingOrchestrator({
   // AI assistant
   const meetingAI = useMeetingAI({
     isEnabled: phase === "live",
+    meetingId: meeting.id,
     participants: realtimeMeeting.participants,
   });
 
