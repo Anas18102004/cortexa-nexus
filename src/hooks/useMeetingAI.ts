@@ -85,7 +85,7 @@ export function useMeetingAI({
 
   // Analyze transcript for action items
   const analyzeForActions = useCallback(async () => {
-    if (!isEnabled || transcriptRef.current.length === 0) return;
+    if (!isEnabled || !meetingId || transcriptRef.current.length === 0) return;
 
     setIsProcessing(true);
     try {
@@ -93,6 +93,7 @@ export function useMeetingAI({
         body: {
           action: "actions",
           transcript: transcriptRef.current.join("\n"),
+          meetingId,
         },
       });
 
@@ -116,7 +117,7 @@ export function useMeetingAI({
     } finally {
       setIsProcessing(false);
     }
-  }, [isEnabled, onActionItemDetected]);
+  }, [isEnabled, meetingId, onActionItemDetected]);
 
   // Generate meeting summary
   const generateSummary = useCallback(async () => {
