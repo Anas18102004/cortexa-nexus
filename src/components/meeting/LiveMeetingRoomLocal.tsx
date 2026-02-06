@@ -538,6 +538,9 @@ export function LiveMeetingRoomLocal({
         />
       )}
 
+      {/* Participant Join/Leave Notifications */}
+      <ParticipantJoinNotification events={realtimePresence.recentEvents} />
+
       {/* AI Nudge */}
       <AnimatePresence>
         {aiNudge && (
